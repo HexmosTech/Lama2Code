@@ -10,14 +10,14 @@
 		"Other"
 	],
 	"activationEvents": [
-        "onCommand:elfling.blahblah"
+        "onCommand:elfling.ExecuteCurrentFile"
 	],
 	"main": "./out/extension.js",
 	"contributes": {
 		"commands": [
 			{
-				"command": "elfling.blahblah",
-				"title": "Blah blah"
+				"command": "elfling.ExecuteCurrentFile",
+				"title": "Elfling: Execute Current File"
 			}
 		]
 	},
