@@ -2,15 +2,25 @@
   "name": "elfling",
 	"displayName": "elfling",
 	"description": "Nifty UI for httpelf, the textual api manager",
-	"version": "0.0.1",
+	"version": "0.0.2",
+	"repository": {
+		"type": "git",
+		"url": "https://gitlab.com/flyweightgroup/httpelf"
+	},
 	"engines": {
 		"vscode": "^1.65.0"
 	},
+	"languages": [{
+		"id": "http", 
+		"extensions": [".http"], 
+		"aliases": ["elf", "http"]
+	}],
 	"categories": [
 		"Other"
 	],
 	"activationEvents": [
-        "onCommand:elfling.ExecuteCurrentFile"
+        "onCommand:elfling.ExecuteCurrentFile",
+		"onLanguage:http"
 	],
 	"main": "./out/extension.js",
 	"contributes": {

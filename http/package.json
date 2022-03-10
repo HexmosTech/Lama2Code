@@ -1,0 +1,25 @@
+{
+    "name": "http",
+    "displayName": "http",
+    "description": "Utilties and support for working with httpelf",
+    "version": "0.0.1",
+    "engines": {
+        "vscode": "^1.65.0"
+    },
+    "categories": [
+        "Programming Languages"
+    ],
+    "contributes": {
+        "languages": [{
+            "id": "http",
+            "aliases": ["http", "http"],
+            "extensions": [".http"],
+            "configuration": "./language-configuration.json"
+        }],
+        "grammars": [{
+            "language": "http",
+            "scopeName": "source.http",
+            "path": "./syntaxes/http.tmLanguage.json"
+        }]
+    }
+}
