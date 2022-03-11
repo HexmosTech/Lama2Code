@@ -1,6 +1,15 @@
 import * as vscode from 'vscode';
+import ChokiExtension from './watchFile'
+var Convert = require('ansi-to-html');
+var convert = new Convert({
+    "newline": true
+});
+
+let fs = require('fs')
 
 let ELF_TERM_NAME = "AutoElfling"
+let outPath:string = "";
+let flagPath:string = "";
 
 function getActiveTerminals() {
     return vscode.window.terminals;
@@ -50,12 +59,49 @@ function getElfCommand() {
     }
 }
 
+function getWrappedHtml(htmlContent:string) {
+    return `<div>${htmlContent}</div>}`
+}
+
+function getOrCreateWebPanel() {
+    // TODO
+}
+
+function postElfCommand() {
+    const panel = vscode.window.createWebviewPanel(
+        'elfOutput',
+        'Elf Output',
+        vscode.ViewColumn.Beside,
+        {}
+    );
+    let content = fs.readFileSync(outPath).toString()
+    let htmlContent = convert.toHtml(content)
+    panel.webview.html = getWrappedHtml(htmlContent)
+
+    fs.unlinkSync(outPath);
+    fs.unlinkSync(flagPath);
+}
+
+
+function onElfFinish(fp:any) {
+    vscode.window.showInformationMessage(`Elf command completed according to ${fp}`)
+    postElfCommand()
+}
+
 function execElfCommand(elfTerm:vscode.Terminal, elfCommand:string) {
     elfTerm.sendText(elfCommand)
+}
+
+function setElfWatch() {
+    let c = new ChokiExtension()
+    c.pathAddTrigger(flagPath, onElfFinish)
 }
 
 export default function ExecuteCurrentFile() {
     let terminal = getShowElfTerm(ELF_TERM_NAME)
     let {cmd, rflag, rfile} = getElfCommand()
+    outPath = rfile
+    flagPath = rflag
+    setElfWatch()
     execElfCommand(terminal, cmd)
 }
