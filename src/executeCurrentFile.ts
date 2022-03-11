@@ -27,9 +27,27 @@ function getShowElfTerm(name: string) {
     return terminal
 }
 
+function generateRandomName(length:any) {
+    const characters ='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let result = '';
+    const charactersLength = characters.length;
+    for ( let i = 0; i < length; i++ ) {
+        result += characters.charAt(Math.floor(Math.random() * charactersLength));
+    }
+
+    return result;
+}
+
 function getElfCommand() {
+    let randomNameBase = generateRandomName(8)
+    let randomNameFlag = `/tmp/${randomNameBase}.flag`
+    let randomNameFile = `/tmp/${randomNameBase}.out`
     let currentFilePath = vscode.window.activeTextEditor?.document.fileName
-    return `elf ${currentFilePath}`
+    return {
+        "cmd": `elf ${currentFilePath} 2>&1 | tee ${randomNameFile}; touch ${randomNameFlag}`,
+        "rflag": randomNameFlag,
+        "rfile": randomNameFile
+    }
 }
 
 function execElfCommand(elfTerm:vscode.Terminal, elfCommand:string) {
@@ -38,6 +56,6 @@ function execElfCommand(elfTerm:vscode.Terminal, elfCommand:string) {
 
 export default function ExecuteCurrentFile() {
     let terminal = getShowElfTerm(ELF_TERM_NAME)
-    let command = getElfCommand()
-    execElfCommand(terminal, command)
+    let {cmd, rflag, rfile} = getElfCommand()
+    execElfCommand(terminal, cmd)
 }
