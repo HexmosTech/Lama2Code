@@ -22,17 +22,17 @@ export default class ChokiExtension {
         this.watcher = null
     }
 
-    pathAddTrigger(path:string, triggerFn:any) {
+    pathAddTrigger(path:string, triggerFn:any, boundObj:any) {
         this.watcher = chokidar.watch(path, {
             usePolling: true
         });
-
+        let newFunc = triggerFn.bind(boundObj)
         let _this = this;
         this.watcher.on('add', function (p:string) {
             setTimeout(function () {
                 console.log("Chokidar Clozing"); _this.watcher.close();
             }, 1000)
-            return triggerFn(p)
+            return newFunc(p)
         });
     }
 

@@ -11,7 +11,7 @@ export default function splitElfOutput(content: string) {
     if (match) {
         [elflog, httpie] = splitAt(content, match.index);
     }
-    re = /^\s*[{<]/gm;
+    re = /^\s*[{\[<]/gm;
     match = re.exec(httpie);
     if (match) {
         [httpHead, body] = splitAt(httpie, match.index);

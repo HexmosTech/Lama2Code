@@ -2,82 +2,116 @@ import * as vscode from 'vscode';
 import ChokiExtension from './watchFile';
 var Convert = require('ansi-to-html');
 let fs = require('fs')
+var path = require('path');
+var json2html = require('json2html')
 import splitElfOutput from './parseOut'
 
-var convert = new Convert({
-    "newline": true
-});
+class ExecuteCurrentFile {
+    ELF_TERM_NAME = "AutoElfling"
+    outPath: string = "";
+    flagPath: string = "";
+    panel: any;
+    context: vscode.ExtensionContext;
+    convert = new Convert({
+        "newline": true
+    });
 
-let ELF_TERM_NAME = "AutoElfling"
-let outPath: string = "";
-let flagPath: string = "";
-var panel:any;
+    constructor(ctx: vscode.ExtensionContext) {
+        this.context = ctx
+    }
 
-function getActiveTerminals() {
-    return vscode.window.terminals;
-}
 
-function findTerminalsByName(name: string) {
-    let terminals = getActiveTerminals()
-    let found = terminals.find(element => element.name == name)
-    return found
-}
+    getActiveTerminals() {
+        return vscode.window.terminals;
+    }
 
-function findOrCreateTerminal(name: string) {
-    let terminal = findTerminalsByName(name)
-    if (terminal == null) {
-        return vscode.window.createTerminal(name)
-    } else {
+    findTerminalsByName(name: string) {
+        let terminals = this.getActiveTerminals()
+        let found = terminals.find(element => element.name == name)
+        return found
+    }
+
+    findOrCreateTerminal(name: string) {
+        let terminal = this.findTerminalsByName(name)
+        if (terminal == null) {
+            return vscode.window.createTerminal(name)
+        } else {
+            return terminal
+        }
+    }
+
+    getShowElfTerm(name: string) {
+        let terminal = this.findOrCreateTerminal(name)
+        terminal.show()
         return terminal
     }
-}
 
-function getShowElfTerm(name: string) {
-    let terminal = findOrCreateTerminal(name)
-    terminal.show()
-    return terminal
-}
+    generateRandomName(length: any) {
+        const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        let result = '';
+        const charactersLength = characters.length;
+        for (let i = 0; i < length; i++) {
+            result += characters.charAt(Math.floor(Math.random() * charactersLength));
+        }
 
-function generateRandomName(length: any) {
-    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    let result = '';
-    const charactersLength = characters.length;
-    for (let i = 0; i < length; i++) {
-        result += characters.charAt(Math.floor(Math.random() * charactersLength));
+        return result;
     }
 
-    return result;
-}
-
-function getElfCommand() {
-    let randomNameBase = generateRandomName(8)
-    let randomNameFlag = `/tmp/${randomNameBase}.flag`
-    let randomNameFile = `/tmp/${randomNameBase}.out`
-    let currentFilePath = vscode.window.activeTextEditor?.document.fileName
-    return {
-        "cmd": `elf -n ${currentFilePath} 2>&1 | tee ${randomNameFile}; touch ${randomNameFlag}`,
-        "rflag": randomNameFlag,
-        "rfile": randomNameFile
+    getElfCommand() {
+        let randomNameBase = this.generateRandomName(8)
+        let randomNameFlag = `/tmp/${randomNameBase}.flag`
+        let randomNameFile = `/tmp/${randomNameBase}.out`
+        let currentFilePath = vscode.window.activeTextEditor?.document.fileName
+        return {
+            "cmd": `elf -n ${currentFilePath} 2>&1 | tee ${randomNameFile}; touch ${randomNameFlag}`,
+            "rflag": randomNameFlag,
+            "rfile": randomNameFile
+        }
     }
-}
 
-function getWrappedHtml(elflogHTML: string, httpHead: string, body: string) {
-    return `<div id="container">
-        <h2>Elf Log</h2>
-        ><div>${elflogHTML}</div>
-        <h2>Headers</h2>
-        <div>${httpHead}</div>
-        <h2>Response Body</h2>
-        <div>${body}</div>
-    <div>`;
-}
+    getScriptTags(scripts: Array<string>) {
+        let op: string = ""
+        for (let s of scripts) {
+            op += `<script src="${s}"></script>`
+        }
+        return op;
+    }
 
-function getOrCreateWebPanel() {
-    // TODO
-}
+    getStyleTags(styles: Array<string>) {
+        let op: string = ""
+        for (let s of styles) {
+            op += `<link rel="stylesheet" href="${s}"/>`
+        }
+        return op;
+    }
 
-function getSpinnerFragment() {
-    let spinner = `<style>
+    getWrappedHtml(elflogHTML: string, httpHead: string, body: string, styles: Array<string>, scripts: Array<string>) {
+        /*
+        try {
+            var j = JSON.parse(body)
+            body = json2html.render(j, {plainHTML: true})
+        } catch (e) {}
+        */
+        return `${this.getStyleTags(styles)}
+        <div id="container">
+            <h2>Elf Log</h2>
+            <div id="elflog">${elflogHTML}</div>
+            <h2>Headers</h2>
+            <div id="httphead">${httpHead}</div>
+            <h2>Response Body</h2>
+            <div id="responsebody">${body}</div>
+            <div id="wrapper"></div>
+        <div>
+        ${this.getScriptTags(scripts)}
+        `
+    }
+
+    getOrCreateWebPanel() {
+        // TODO
+    }
+
+    getSpinnerFragment() {
+        let spinner = `<style>
     .lds-dual-ring {
   display: inline-block;
   width: 80px;
@@ -103,53 +137,104 @@ function getSpinnerFragment() {
   }
 }</style><div class="lds-dual-ring"></div>
 `
-    return spinner
-}
-
-function postElfCommand() {
-    let content = fs.readFileSync(outPath).toString();
-    let elflog, httpHead, body;
-    [elflog, httpHead, body] = splitElfOutput(content);
-    let elflogHTML = convert.toHtml(elflog);
-    let httpHeadHTML = convert.toHtml(httpHead);
-    panel.webview.html = getWrappedHtml(elflogHTML, httpHeadHTML, body);
-
-    fs.unlinkSync(outPath);
-    fs.unlinkSync(flagPath);
-}
-
-
-function onElfFinish(fp: any) {
-    vscode.window.showInformationMessage(`Elf command completed according to ${fp}`)
-    postElfCommand()
-}
-
-function execElfCommand(elfTerm: vscode.Terminal, elfCommand: string) {
-    console.log("elfTerm: ", elfTerm, "elfCommand: ", elfCommand)
-    if(panel) {
-        panel.reveal()
-    } else {
-        panel = vscode.window.createWebviewPanel(
-            'elfOutput',
-            'Elf Output',
-            vscode.ViewColumn.Beside,
-            {}
-        );
+        return spinner
     }
-    panel.webview.html = `<h2>Loading...</h2>${getSpinnerFragment()}`
-    elfTerm.sendText(elfCommand)
+
+    getWebViewUri(filename: string) {
+        const styleOnDiskPath = vscode.Uri.file(
+            path.join(this.context.extensionPath, 'media', filename)
+        );
+        return this.panel.webview.asWebviewUri(styleOnDiskPath);
+
+    }
+
+    postElfCommand() {
+        let content = fs.readFileSync(this.outPath).toString();
+        console.log("Content = ", content)
+        let elflog, httpHead, body;
+        [elflog, httpHead, body] = splitElfOutput(content);
+        console.log("body = ", body)
+        let elflogHTML = this.convert.toHtml(elflog);
+        let httpHeadHTML = this.convert.toHtml(httpHead);
+        const stylesrc = this.getWebViewUri('style.css')
+        const j2hstyle = this.getWebViewUri('index.css')
+        const scriptsrc = this.getWebViewUri('script.js')
+        const j2h = this.getWebViewUri('j2h-converter.js')
+
+        // const treestyle = this.getWebViewUri('jsonTree.css')
+        // const jsonview = this.getWebViewUri('jsonview.js')
+
+        const jquery = this.getWebViewUri('jquery.min.js')
+
+        const styles = [stylesrc, j2hstyle]
+        const scripts = [jquery, j2h, scriptsrc]
+        this.panel.webview.html = this.getWrappedHtml(elflogHTML, httpHeadHTML, body, styles, scripts);
+
+        fs.unlinkSync(this.outPath);
+        fs.unlinkSync(this.flagPath);
+    }
+
+
+    onElfFinish(fp: any) {
+        vscode.window.showInformationMessage(`Elf command completed according to ${fp}`)
+        this.postElfCommand()
+    }
+
+    execElfCommand(elfTerm: vscode.Terminal, elfCommand: string) {
+        console.log("elfTerm: ", elfTerm, "elfCommand: ", elfCommand)
+        if (this.panel) {
+            console.log("Reusing existing panel")
+            this.panel.reveal()
+        } else {
+            console.log("Creating new panel")
+            this.panel = vscode.window.createWebviewPanel(
+                'elfOutput',
+                'Elf Output',
+                vscode.ViewColumn.Beside,
+                {
+                    // Only allow the webview to access resources in our extension's media directory
+                    localResourceRoots: [vscode.Uri.file(path.join(this.context.extensionPath, 'media'))],
+                    enableFindWidget: true,
+                    enableScripts: true
+                }
+            );
+            this.panel.onDidDispose(
+                () => {
+                    this.panel = undefined;
+                },
+                undefined,
+                this.context.subscriptions
+            );
+            this.panel.webview.onDidReceiveMessage(
+                (message:any) => {
+                    switch (message.command) {
+                        case 'alert':
+                            vscode.window.showInformationMessage(message.text);
+                            return;
+                    }
+                },
+                undefined,
+                this.context.subscriptions
+            );
+        }
+        this.panel.webview.html = `<h2>Loading...</h2>${this.getSpinnerFragment()}`
+        elfTerm.sendText(elfCommand)
+    }
+
+    setElfWatch() {
+        let c = new ChokiExtension()
+        c.pathAddTrigger(this.flagPath, this.onElfFinish, this)
+    }
+
+    execFile() {
+        let terminal = this.getShowElfTerm(this.ELF_TERM_NAME)
+        let { cmd, rflag, rfile } = this.getElfCommand()
+        this.outPath = rfile
+        this.flagPath = rflag
+        this.setElfWatch()
+        this.execElfCommand(terminal, cmd)
+    }
+
 }
 
-function setElfWatch() {
-    let c = new ChokiExtension()
-    c.pathAddTrigger(flagPath, onElfFinish)
-}
-
-export default function ExecuteCurrentFile() {
-    let terminal = getShowElfTerm(ELF_TERM_NAME)
-    let { cmd, rflag, rfile } = getElfCommand()
-    outPath = rfile
-    flagPath = rflag
-    setElfWatch()
-    execElfCommand(terminal, cmd)
-}
+export default ExecuteCurrentFile
