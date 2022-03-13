@@ -1,5 +1,6 @@
 #!/bin/bash
 
+yarn
 rm -rf *.vsix
 npm install -g vsce
 cp -r http ~/.vscode/extensions
