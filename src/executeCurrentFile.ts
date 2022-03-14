@@ -93,15 +93,17 @@ class ExecuteCurrentFile {
         } catch (e) {}
         */
         return `${this.getStyleTags(styles)}
-        <div id="container">
-            <h2>Elf Log</h2>
-            <div id="elflog">${elflogHTML}</div>
-            <h2>Headers</h2>
-            <div id="httphead">${httpHead}</div>
-            <h2>Response Body</h2>
+        <ul data-tabs>
+            <li><a data-tabby-default href="#main">Response</a></li>
+            <li><a href="#httphead">Headers</a></li>
+            <li><a href="#elflog">Elf Logs</a></li>
+        </ul>
+        <div id="main">
             <div id="responsebody">${body}</div>
             <div id="wrapper"></div>
-        <div>
+        </div>
+        <div id="httphead">${httpHead}</div>
+        <div id="elflog">${elflogHTML}</div>
         ${this.getScriptTags(scripts)}
         `
     }
@@ -161,13 +163,16 @@ class ExecuteCurrentFile {
         const scriptsrc = this.getWebViewUri('script.js')
         const j2h = this.getWebViewUri('j2h-converter.js')
 
+        const tabbyjs = this.getWebViewUri('tabby.polyfills.min.js')
+        const tabbycss = this.getWebViewUri('tabby-ui.min.css')
+
         // const treestyle = this.getWebViewUri('jsonTree.css')
         // const jsonview = this.getWebViewUri('jsonview.js')
 
         const jquery = this.getWebViewUri('jquery.min.js')
 
-        const styles = [stylesrc, j2hstyle]
-        const scripts = [jquery, j2h, scriptsrc]
+        const styles = [stylesrc, j2hstyle, tabbycss]
+        const scripts = [jquery, j2h, tabbyjs, scriptsrc]
         this.panel.webview.html = this.getWrappedHtml(elflogHTML, httpHeadHTML, body, styles, scripts);
 
         fs.unlinkSync(this.outPath);
@@ -206,7 +211,7 @@ class ExecuteCurrentFile {
                 this.context.subscriptions
             );
             this.panel.webview.onDidReceiveMessage(
-                (message:any) => {
+                (message: any) => {
                     switch (message.command) {
                         case 'alert':
                             vscode.window.showInformationMessage(message.text);

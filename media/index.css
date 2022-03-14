@@ -21,18 +21,37 @@ code {
     margin-left: 1%;
 }
 
-.page_header a:hover { color: #0368d4; }
+.page_header a:hover {
+    color: #0368d4;
+}
 
-.page_content { margin-top: 1%; }
+.page_content {
+    margin-top: 1%;
+}
 
-.features, .samples { line-height: 25px; }
+.features,
+.samples {
+    line-height: 25px;
+}
 
-.samples { 
+.samples {
     list-style: none;
-    padding: 0; 
+    padding: 0;
 }
 
 .heading {
     font-size: 18px;
     font-weight: bold;
+}
+
+table {
+    border-collapse: collapse;
+    table-layout: fixed;
+    width: 310px;
+}
+
+table td {
+    border: solid 1px #fab;
+    width: 100px;
+    word-wrap: break-word;
 }

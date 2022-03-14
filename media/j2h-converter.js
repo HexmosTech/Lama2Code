@@ -1,4 +1,4 @@
-var J2HConverter = function(sourceJson, container) { 
+var J2HConverter = function(sourceJson, container) {
     this.sourceJson = sourceJson.trim();
     this.container = container;
     this.attributes = null;
@@ -36,7 +36,7 @@ J2HConverter.prototype = {
     },
 
     _getJsonStructure: function(parsedJson) {
-        if(parsedJson && parsedJson.length > 0) {
+        if (parsedJson && parsedJson.length > 0) {
             if (typeof parsedJson[0] == 'string') return this._jsonStruct.stringArray;
             else if (typeof parsedJson[0] == 'object') return this._jsonStruct.objectArray;
         }
@@ -45,10 +45,9 @@ J2HConverter.prototype = {
 
     _setAttributes: function(srcTable, attributes) {
         if (attributes) {
-            for(var key in attributes)
+            for (var key in attributes)
                 srcTable.setAttribute(key, attributes[key]);
-        }
-        else {
+        } else {
             srcTable.border = '1';
             srcTable.style.borderCollapse = 'collapse';
         }
@@ -73,20 +72,21 @@ J2HConverter.prototype = {
                 if (jsonStruct == this._jsonStruct.stringArray)
                     cell.textContent = rowDataItem;
                 else if (jsonStruct == this._jsonStruct.objectArray) {
-                    if(rowDataItem.hasOwnProperty(colDataItem)) {
+                    if (rowDataItem.hasOwnProperty(colDataItem)) {
                         var colDataStr = this._jsonObjToArray(JSON.stringify(rowDataItem[colDataItem]));
                         var colDataJson = JSON.parse(colDataStr);
                         var colDataStruct = this._getJsonStructure(colDataJson);
                         if (colDataStruct == this._jsonStruct.unknown || colDataStruct == this._jsonStruct.stringArray) {
                             cell.textContent = colDataJson; // Show as-is
-                        }
-                        else {
-                            var info = document.createElement('p');
+                        } else {
+                            var info = document.createElement('div');
                             info.innerHTML = '&#43;';
                             // info.href = '#';
                             info.style.fontWeight = 'bold';
-                            info.style.color = 'blue';
-                            // info.style.textDecoration = 'none';
+                            info.style.color = 'white';
+                            info.style.backgroundColor = "black"
+                            info.style.border = "1px solid white"
+                                // info.style.textDecoration = 'none';
                             info.args = {
                                 srcTable: srcTable,
                                 srcColumn: colDataItem,
@@ -110,8 +110,8 @@ J2HConverter.prototype = {
         var rowData = e.target.args.rowData;
         var parentRowIdx, trHeading, trDetail;
 
-        if(e.target.args.colState == 'collapsed') {
-            if(e.target.args.processRowData) { // Create table only for the first time
+        if (e.target.args.colState == 'collapsed') {
+            if (e.target.args.processRowData) { // Create table only for the first time
                 parentRowIdx = e.target.parentElement.parentElement.rowIndex;
 
                 trHeading = srcTable.tBodies[0].insertRow(parentRowIdx);
@@ -131,8 +131,7 @@ J2HConverter.prototype = {
 
                 e.target.args.processRowData = false;
                 e.target.args.parentRowIdx = parentRowIdx;
-            }
-            else { // Just display on subsequent toggles
+            } else { // Just display on subsequent toggles
                 parentRowIdx = e.target.args.parentRowIdx;
                 trHeading = srcTable.tBodies[0].querySelector('#trh_' + parentRowIdx + '_' + srcColumn);
                 trDetail = srcTable.tBodies[0].querySelector('#trd_' + parentRowIdx + '_' + srcColumn);
@@ -141,8 +140,7 @@ J2HConverter.prototype = {
             }
             e.target.args.colState = 'expanded';
             e.target.innerHTML = '&ndash;';
-        }
-        else if (e.target.args.colState == 'expanded') { // Hide
+        } else if (e.target.args.colState == 'expanded') { // Hide
             parentRowIdx = e.target.args.parentRowIdx;
             trHeading = srcTable.tBodies[0].querySelector('#trh_' + parentRowIdx + '_' + srcColumn);
             trDetail = srcTable.tBodies[0].querySelector('#trd_' + parentRowIdx + '_' + srcColumn);
@@ -155,13 +153,13 @@ J2HConverter.prototype = {
     },
 
     _getKeys: function(json) {
-    	var keys = [];
-    	json.forEach(function(item) {
-        	for(var key in item) {
-        		if(keys.indexOf(key) > -1)
-        			continue;
-        		keys.push(key);
-        	}
+        var keys = [];
+        json.forEach(function(item) {
+            for (var key in item) {
+                if (keys.indexOf(key) > -1)
+                    continue;
+                keys.push(key);
+            }
         });
         return keys;
     },

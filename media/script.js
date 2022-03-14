@@ -1,4 +1,5 @@
 $(document).ready(function () {
+    var tabs = new Tabby('[data-tabs]');
     const vscode = acquireVsCodeApi();
     var respBody = $('#responsebody').text()
     console.log("respBody = ", respBody)
