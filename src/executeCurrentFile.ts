@@ -4,10 +4,10 @@ var Convert = require('ansi-to-html');
 let fs = require('fs')
 var path = require('path');
 var json2html = require('json2html')
-import splitElfOutput from './parseOut'
+import splitLama2Output from './parseOut'
 
 class ExecuteCurrentFile {
-    ELF_TERM_NAME = "AutoElfling"
+    LAMA2_TERM_NAME = "AutoLama2"
     outPath: string = "";
     flagPath: string = "";
     panel: any;
@@ -40,7 +40,7 @@ class ExecuteCurrentFile {
         }
     }
 
-    getShowElfTerm(name: string) {
+    getShowLam2Term(name: string) {
         let terminal = this.findOrCreateTerminal(name)
         terminal.show()
         return terminal
@@ -57,7 +57,7 @@ class ExecuteCurrentFile {
         return result;
     }
 
-    getElfCommand() {
+    getLama2Command() {
         let randomNameBase = this.generateRandomName(8)
         let randomNameFlag = `/tmp/${randomNameBase}.flag`
         let randomNameFile = `/tmp/${randomNameBase}.out`
@@ -85,7 +85,7 @@ class ExecuteCurrentFile {
         return op;
     }
 
-    getWrappedHtml(elflogHTML: string, httpHead: string, body: string, styles: Array<string>, scripts: Array<string>) {
+    getWrappedHtml(lama2LogHTML: string, httpHead: string, body: string, styles: Array<string>, scripts: Array<string>) {
         /*
         try {
             var j = JSON.parse(body)
@@ -96,14 +96,14 @@ class ExecuteCurrentFile {
         <ul data-tabs>
             <li><a data-tabby-default href="#main">Response</a></li>
             <li><a href="#httphead">Headers</a></li>
-            <li><a href="#elflog">Elf Logs</a></li>
+            <li><a href="#elflog">Lama2 Logs</a></li>
         </ul>
         <div id="main">
             <div id="responsebody">${body}</div>
             <div id="wrapper"></div>
         </div>
         <div id="httphead">${httpHead}</div>
-        <div id="elflog">${elflogHTML}</div>
+        <div id="elflog">${lama2LogHTML}</div>
         ${this.getScriptTags(scripts)}
         `
     }
@@ -150,13 +150,13 @@ class ExecuteCurrentFile {
 
     }
 
-    postElfCommand() {
+    postLama2Command() {
         let content = fs.readFileSync(this.outPath).toString();
         console.log("Content = ", content)
-        let elflog, httpHead, body;
-        [elflog, httpHead, body] = splitElfOutput(content);
+        let lama2Log, httpHead, body;
+        [lama2Log, httpHead, body] = splitLama2Output(content);
         console.log("body = ", body)
-        let elflogHTML = this.convert.toHtml(elflog);
+        let lama2LogHTML = this.convert.toHtml(lama2Log);
         let httpHeadHTML = this.convert.toHtml(httpHead);
         const stylesrc = this.getWebViewUri('style.css')
         const j2hstyle = this.getWebViewUri('index.css')
@@ -173,28 +173,28 @@ class ExecuteCurrentFile {
 
         const styles = [stylesrc, j2hstyle, tabbycss]
         const scripts = [jquery, j2h, tabbyjs, scriptsrc]
-        this.panel.webview.html = this.getWrappedHtml(elflogHTML, httpHeadHTML, body, styles, scripts);
+        this.panel.webview.html = this.getWrappedHtml(lama2LogHTML, httpHeadHTML, body, styles, scripts);
 
         fs.unlinkSync(this.outPath);
         fs.unlinkSync(this.flagPath);
     }
 
 
-    onElfFinish(fp: any) {
-        vscode.window.showInformationMessage(`Elf command completed according to ${fp}`)
-        this.postElfCommand()
+    onLama2Finish(fp: any) {
+        vscode.window.showInformationMessage(`Lama2 command completed according to ${fp}`)
+        this.postLama2Command()
     }
 
-    execElfCommand(elfTerm: vscode.Terminal, elfCommand: string) {
-        console.log("elfTerm: ", elfTerm, "elfCommand: ", elfCommand)
+    execLama2Command(lama2Term: vscode.Terminal, lama2Command: string) {
+        console.log("lama2Term: ", lama2Term, "lama2Command: ", lama2Command)
         if (this.panel) {
             console.log("Reusing existing panel")
             this.panel.reveal()
         } else {
             console.log("Creating new panel")
             this.panel = vscode.window.createWebviewPanel(
-                'elfOutput',
-                'Elf Output',
+                'lama2Output',
+                'Lama2 Output',
                 vscode.ViewColumn.Beside,
                 {
                     // Only allow the webview to access resources in our extension's media directory
@@ -223,21 +223,21 @@ class ExecuteCurrentFile {
             );
         }
         this.panel.webview.html = `<h2>Loading...</h2>${this.getSpinnerFragment()}`
-        elfTerm.sendText(elfCommand)
+        lama2Term.sendText(lama2Command)
     }
 
-    setElfWatch() {
+    setLama2Watch() {
         let c = new ChokiExtension()
-        c.pathAddTrigger(this.flagPath, this.onElfFinish, this)
+        c.pathAddTrigger(this.flagPath, this.onLama2Finish, this)
     }
 
     execFile() {
-        let terminal = this.getShowElfTerm(this.ELF_TERM_NAME)
-        let { cmd, rflag, rfile } = this.getElfCommand()
+        let terminal = this.getShowLam2Term(this.LAMA2_TERM_NAME)
+        let { cmd, rflag, rfile } = this.getLama2Command()
         this.outPath = rfile
         this.flagPath = rflag
-        this.setElfWatch()
-        this.execElfCommand(terminal, cmd)
+        this.setLama2Watch()
+        this.execLama2Command(terminal, cmd)
     }
 
 }

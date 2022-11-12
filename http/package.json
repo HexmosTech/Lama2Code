@@ -1,7 +1,7 @@
 {
-    "name": "http",
-    "displayName": "http",
-    "description": "Utilties and support for working with httpelf",
+    "name": "l2",
+    "displayName": "l2",
+    "description": "Utilties and support for working with Lama2",
     "version": "0.0.1",
     "engines": {
         "vscode": "^1.65.0"
@@ -11,13 +11,13 @@
     ],
     "contributes": {
         "languages": [{
-            "id": "http",
-            "aliases": ["http", "http"],
-            "extensions": [".http"],
+            "id": "l2",
+            "aliases": ["l2", "lama2"],
+            "extensions": [".l2", ".lama", ".lama2"],
             "configuration": "./language-configuration.json"
         }],
         "grammars": [{
-            "language": "http",
+            "language": "lama2",
             "scopeName": "source.http",
             "path": "./syntaxes/http.tmLanguage.json"
         }]

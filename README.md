@@ -1,9 +1,9 @@
-# elfling README
+# VSCode Lama2 README
 
-Elfling is a vscode support extension for the [httpelf](https://gitlab.com/flyweightgroup/httpelf).
+Lama2 is a VSCode support extension for [Lama2](https://github.com/HexmosTech/Lama2).
 ## Features
 
-1. Execute the focused `.http` file through `Execute this file`
+1. Execute the focused `.l2` file through `Execute this file`
 ## Requirements
 
 Run:

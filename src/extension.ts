@@ -3,9 +3,9 @@ import ExecuteCurrentFile from './executeCurrentFile';
 
 export function activate(context: vscode.ExtensionContext) {
 	
-	console.log('>>> Congratulations, your extension "elfling" is now active!');
+	console.log('>>> Congratulations, your extension "Lama2" is now active!');
 	let e = new ExecuteCurrentFile(context)
-	let disposable = vscode.commands.registerCommand('elfling.ExecuteCurrentFile', () => e.execFile());
+	let disposable = vscode.commands.registerCommand('lama2.ExecuteCurrentFile', () => e.execFile());
 	context.subscriptions.push(disposable);
 }
 
