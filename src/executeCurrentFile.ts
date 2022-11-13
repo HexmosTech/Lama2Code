@@ -63,7 +63,7 @@ class ExecuteCurrentFile {
         let randomNameFile = `/tmp/${randomNameBase}.out`
         let currentFilePath = vscode.window.activeTextEditor?.document.fileName
         return {
-            "cmd": `elf -n ${currentFilePath} 2>&1 | tee ${randomNameFile}; touch ${randomNameFlag}`,
+            "cmd": `l2 -n ${currentFilePath} 2>&1 | tee ${randomNameFile}; touch ${randomNameFlag}`,
             "rflag": randomNameFlag,
             "rfile": randomNameFile
         }
