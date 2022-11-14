@@ -3,6 +3,8 @@
 	"displayName": "Lama2",
 	"description": "Nifty VSCode UI for Lama2, the plain-text powered API client",
 	"version": "0.0.2",
+	"publisher": "Hexmos",
+	"license": "SEE LICENSE IN LICENCE",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/HexmosTech/VSCodeLama2"
