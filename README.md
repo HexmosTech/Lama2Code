@@ -4,11 +4,11 @@ Lama2 is a VSCode support extension for [Lama2](https://github.com/HexmosTech/La
 
 
 
-![](./banner.png)
+![](https://github.com/HexmosTech/Lama2/raw/main/banner.png)
 
 ## Demo
 
-![](./demo2.gif)
+![](https://github.com/HexmosTech/Lama2/raw/main/docs/Lama2/docs/demo2.gif)
 
 ## About
 
