@@ -60,10 +60,10 @@ class ExecuteCurrentFile {
     getLama2Command() {
         let randomNameBase = this.generateRandomName(8)
         let randomNameFlag = `/tmp/${randomNameBase}.flag`
-        let randomNameFile = `/tmp/${randomNameBase}.out`
+        let randomNameFile = `/tmp/${randomNameBase}.json`
         let currentFilePath = vscode.window.activeTextEditor?.document.fileName
         return {
-            "cmd": `l2 -n ${currentFilePath} 2>&1 | tee ${randomNameFile}; touch ${randomNameFlag}`,
+            "cmd": `l2 -n -o ${randomNameFile} ${currentFilePath}; touch ${randomNameFlag}`,
             "rflag": randomNameFlag,
             "rfile": randomNameFile
         }
