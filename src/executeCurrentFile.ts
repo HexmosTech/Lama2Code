@@ -58,12 +58,23 @@ class ExecuteCurrentFile {
     }
 
     getLama2Command() {
+        let randomNameFile = null
+        let randomNameFlag = null
+        let cmd = null
         let randomNameBase = this.generateRandomName(8)
-        let randomNameFlag = `/tmp/${randomNameBase}.flag`
-        let randomNameFile = `/tmp/${randomNameBase}.json`
         let currentFilePath = vscode.window.activeTextEditor?.document.fileName
+        
+        if (process.platform === "win32") {
+            randomNameFlag = `C:\\ProgramData\\Temp\\${randomNameBase}.flag`
+            randomNameFile = `C:\\ProgramData\\Temp\\${randomNameBase}.json`
+            cmd = `powershell l2 -n -o ${randomNameFile} ${currentFilePath}; New-Item -Path ${randomNameFlag}`
+        }else {
+            randomNameFlag = `/tmp/${randomNameBase}.flag` 
+            randomNameFile = `/tmp/${randomNameBase}.json` 
+            cmd = `l2 -n -o ${randomNameFile} ${currentFilePath}; touch ${randomNameFlag}`
+        }
         return {
-            "cmd": `l2 -n -o ${randomNameFile} ${currentFilePath}; touch ${randomNameFlag}`,
+            "cmd": cmd,
             "rflag": randomNameFlag,
             "rfile": randomNameFile
         }
