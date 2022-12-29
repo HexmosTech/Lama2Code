@@ -61,12 +61,16 @@ class ExecuteCurrentFile {
         let randomNameFile = null
         let randomNameFlag = null
         let cmd = null
+        let windowsBasePath = "C:\\ProgramData\\.lama2"
         let randomNameBase = this.generateRandomName(8)
         let currentFilePath = vscode.window.activeTextEditor?.document.fileName
         
         if (process.platform === "win32") {
-            randomNameFlag = `C:\\ProgramData\\Temp\\${randomNameBase}.flag`
-            randomNameFile = `C:\\ProgramData\\Temp\\${randomNameBase}.json`
+            if (!fs.existsSync(windowsBasePath)) {
+                fs.mkdirSync(windowsBasePath)
+            }
+            randomNameFlag = `${windowsBasePath}\\${randomNameBase}.flag`
+            randomNameFile = `${windowsBasePath}\\${randomNameBase}.json`
             cmd = `powershell l2 -n -o ${randomNameFile} ${currentFilePath}; New-Item -Path ${randomNameFlag}`
         }else {
             randomNameFlag = `/tmp/${randomNameBase}.flag` 
