@@ -71,11 +71,11 @@ class ExecuteCurrentFile {
             }
             randomNameFlag = `${windowsBasePath}\\${randomNameBase}.flag`
             randomNameFile = `${windowsBasePath}\\${randomNameBase}.json`
-            cmd = `powershell l2 -n -o ${randomNameFile} ${currentFilePath}; New-Item -Path ${randomNameFlag}`
+            cmd = `powershell l2 -o ${randomNameFile} ${currentFilePath}; New-Item -Path ${randomNameFlag}`
         }else {
             randomNameFlag = `/tmp/${randomNameBase}.flag` 
             randomNameFile = `/tmp/${randomNameBase}.json` 
-            cmd = `l2 -n -o ${randomNameFile} ${currentFilePath}; touch ${randomNameFlag}`
+            cmd = `l2 -o ${randomNameFile} ${currentFilePath}; touch ${randomNameFlag}`
         }
         return {
             "cmd": cmd,
