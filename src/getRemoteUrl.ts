@@ -12,8 +12,8 @@ class GetRemoteURL {
 
     async findURL(){
         try {
-            let currentFilePath: string = vscode.window.activeTextEditor?.document.fileName;
-            let parentDir: string = path.dirname(currentFilePath);
+            let currentFilePath: string  = vscode.window.activeTextEditor!.document.fileName;
+            let parentDir: string = path.dirname(currentFilePath!);
             let localgit: SimpleGit = simpleGit(parentDir).clean(CleanOptions.FORCE);
             
 
