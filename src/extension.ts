@@ -4,7 +4,8 @@ import * as path from "path";
 import ExecuteCurrentFile from "./executeCurrentFile";
 import GenerateCodeSnippet from "./generateCodeSnippet";
 import LanguagesData from "./languages";
-import { exec } from 'child_process'
+import { exec } from "child_process";
+import triggers from "./triggers";
 
 interface LanguageData {
   info: {
@@ -38,10 +39,10 @@ export function activate(context: vscode.ExtensionContext) {
   let prettifyCurrentFileDisposable = vscode.commands.registerCommand(
     "lama2.PrettifyCurrentFile",
     () => {
-      console.log("Executing prettify command")
-      exec(`l2 -b ${vscode.window.activeTextEditor?.document.fileName}`)
+      console.log("Executing prettify command");
+      exec(`l2 -b ${vscode.window.activeTextEditor?.document.fileName}`);
     }
-  )
+  );
   context.subscriptions.push(prettifyCurrentFileDisposable);
 
   let generateCodeSnippet = new GenerateCodeSnippet();
@@ -131,25 +132,14 @@ export function activate(context: vscode.ExtensionContext) {
         .split("\n")
         .filter((line) => line.startsWith("export"))
         .map((line) => line.split("=")[0].replace("export ", ""));
-      console.log("envVariables -> ", envVariables);
     });
   }
-
-  console.log("envVariables", envVariables)
 
   let suggestEnvVariables = vscode.languages.registerCompletionItemProvider(
     { language: "lama2", scheme: "file" },
     {
       // eslint-disable-next-line no-unused-vars
       provideCompletionItems(document, position, token, context) {
-        // get all text until the `position` and check if it reads `${`
-
-        const linePrefix = document
-          .lineAt(position)
-          .text.substring(0, position.character);
-        if (!linePrefix.endsWith("${")) {
-          return undefined;
-        }
         let createSuggestion = (text: string) => {
           let item = new vscode.CompletionItem(
             text,
@@ -158,14 +148,29 @@ export function activate(context: vscode.ExtensionContext) {
           item.range = new vscode.Range(position, position);
           return item;
         };
+
+        const currentLine = document.lineAt(position.line).text;
+        const triggerPrefix = currentLine
+          .substring(0, position.character)
+          .includes("${");
+        const triggerPostfix = currentLine
+          .substring(position.character)
+          .includes("}");
+
         const suggestionsArray = envVariables.map((item, index) => {
           return createSuggestion(item);
         });
 
-        return suggestionsArray;
+        if (triggerPrefix == true && triggerPostfix == false) {
+          return suggestionsArray;
+        } else if (triggerPrefix == true) {
+          return suggestionsArray;
+        } else {
+          return [];
+        }
       },
-    },
-    "{" // trigger
+      ...triggers, // trigger
+    }
   );
   context.subscriptions.push(suggestEnvVariables);
 }
