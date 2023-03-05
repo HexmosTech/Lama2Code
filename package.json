@@ -2,7 +2,7 @@
   "name": "Lama2",
   "displayName": "Lama2",
   "description": "Nifty VSCode UI for Lama2, the plain-text powered API client",
-  "version": "2.0.0",
+  "version": "2.2.0",
   "publisher": "Hexmos",
   "license": "SEE LICENSE IN LICENSE",
   "icon": "lama2.png",
@@ -33,6 +33,7 @@
     "onCommand:lama2.ExecuteCurrentFile",
     "onCommand:lama2.PrettifyCurrentFile",
     "onCommand:lama2.GetRemoteURL",
+    "onCommand:lama2.Lama2Examples",
     "onLanguage:http"
   ],
   "main": "./out/extension.js",
@@ -73,6 +74,10 @@
       {
         "command": "lama2.GetRemoteURL",
         "title": "Lama2: Get Remote Git URL"
+      },
+      {
+        "command": "lama2.Lama2Examples",
+        "title": "Lama2: Request Examples"
       }
     ]
   },
