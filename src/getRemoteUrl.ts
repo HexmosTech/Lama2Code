@@ -1,12 +1,12 @@
 import { simpleGit, SimpleGit, CleanOptions } from 'simple-git';
 import * as vscode from 'vscode';
 import * as path from 'path';
-import fs from 'fs';
+import { statSync } from 'fs';
 
 
 function isGitDirectory() {
     try {
-        fs.statSync('.git');
+        statSync('.git');
         return true;
     }
     catch (err: any) {
@@ -29,7 +29,7 @@ class GetRemoteURL {
         }
         else {
             try {
-                let currentFilePath: string = vscode.window.activeTextEditor?.document.fileName;
+                let currentFilePath: string = vscode.window.activeTextEditor!.document.fileName;
                 let parentDir: string = path.dirname(currentFilePath);
                 let localgit: SimpleGit = simpleGit(parentDir).clean(CleanOptions.FORCE);
 
