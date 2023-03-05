@@ -31,6 +31,7 @@
   ],
   "activationEvents": [
     "onCommand:lama2.ExecuteCurrentFile",
+    "onCommand:lama2.PrettifyCurrentFile",
     "onLanguage:http"
   ],
   "main": "./out/extension.js",
@@ -63,6 +64,10 @@
       {
         "command": "lama2.GenerateCodeSnippet",
         "title": "Lama2: Generate Code Snippet"
+      },
+      {
+        "command": "lama2.PrettifyCurrentFile",
+        "title": "Lama2: Prettify Current File JSON"
       }
     ]
   },

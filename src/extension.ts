@@ -4,6 +4,7 @@ import * as path from "path";
 import ExecuteCurrentFile from "./executeCurrentFile";
 import GenerateCodeSnippet from "./generateCodeSnippet";
 import LanguagesData from "./languages";
+import { exec } from 'child_process'
 
 interface LanguageData {
   info: {
@@ -31,6 +32,17 @@ export function activate(context: vscode.ExtensionContext) {
   );
 
   context.subscriptions.push(executeCurrentFileDisposable);
+
+  // Level1 command pallette
+
+  let prettifyCurrentFileDisposable = vscode.commands.registerCommand(
+    "lama2.PrettifyCurrentFile",
+    () => {
+      console.log("Executing prettify command")
+      exec(`l2 -b ${vscode.window.activeTextEditor?.document.fileName}`)
+    }
+  )
+  context.subscriptions.push(prettifyCurrentFileDisposable);
 
   let generateCodeSnippet = new GenerateCodeSnippet();
 
@@ -122,6 +134,8 @@ export function activate(context: vscode.ExtensionContext) {
       console.log("envVariables -> ", envVariables);
     });
   }
+
+  console.log("envVariables", envVariables)
 
   let suggestEnvVariables = vscode.languages.registerCompletionItemProvider(
     { language: "lama2", scheme: "file" },
