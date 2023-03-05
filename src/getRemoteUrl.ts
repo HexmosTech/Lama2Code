@@ -1,7 +1,6 @@
 import { simpleGit, SimpleGit, CleanOptions } from 'simple-git';
 import * as vscode from 'vscode';
 import * as path from 'path';
-import fs from 'fs';
 
 
 class GetRemoteURL {
