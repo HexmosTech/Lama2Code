@@ -32,6 +32,7 @@
   "activationEvents": [
     "onCommand:lama2.ExecuteCurrentFile",
     "onCommand:lama2.PrettifyCurrentFile",
+    "onCommand:lama2.Lama2Examples",
     "onLanguage:http"
   ],
   "main": "./out/extension.js",
@@ -68,6 +69,10 @@
       {
         "command": "lama2.PrettifyCurrentFile",
         "title": "Lama2: Prettify Current File JSON"
+      },
+      {
+        "command": "lama2.Lama2Examples",
+        "title": "Lama2: Request Examples"
       }
     ]
   },
