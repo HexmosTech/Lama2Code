@@ -3,8 +3,9 @@ import * as fs from "fs";
 import * as path from "path";
 import ExecuteCurrentFile from "./executeCurrentFile";
 import GenerateCodeSnippet from "./generateCodeSnippet";
+import GetRemoteURL from "./getRemoteUrl";
 import LanguagesData from "./languages";
-import { exec } from 'child_process'
+import { exec } from 'child_process';
 
 interface LanguageData {
   info: {
@@ -22,6 +23,14 @@ interface LanguagesData {
 
 export function activate(context: vscode.ExtensionContext) {
   console.log('>>> Congratulations, your extension "Lama2" is now active!');
+
+  // Level1 command pallette 
+  let getremoteUrl = new GetRemoteURL(context);
+  let getremoteUrlFileDisposable = vscode.commands.registerCommand(
+    "lama2.GetRemoteURL",
+    () => getremoteUrl.findURL()
+  );
+  context.subscriptions.push(getremoteUrlFileDisposable);
 
   // Level1 command pallette
   let executeCurrentFile = new ExecuteCurrentFile(context);
@@ -135,7 +144,7 @@ export function activate(context: vscode.ExtensionContext) {
     });
   }
 
-  console.log("envVariables", envVariables)
+  // console.log("envVariables", envVariables)
 
   let suggestEnvVariables = vscode.languages.registerCompletionItemProvider(
     { language: "lama2", scheme: "file" },
