@@ -23,7 +23,6 @@ interface LanguagesData {
 
 export function activate(context: vscode.ExtensionContext) {
   console.log('>>> Congratulations, your extension "Lama2" is now active!');
-
   // Level1 command pallette
   let executeCurrentFile = new ExecuteCurrentFile(context);
 
@@ -134,6 +133,8 @@ export function activate(context: vscode.ExtensionContext) {
         .map((line) => line.split("=")[0].replace("export ", ""));
     });
   }
+  let cursorPosition: any;
+  let linePosition: any;
 
   let suggestEnvVariables = vscode.languages.registerCompletionItemProvider(
     { language: "lama2", scheme: "file" },
@@ -146,6 +147,10 @@ export function activate(context: vscode.ExtensionContext) {
             vscode.CompletionItemKind.Text
           );
           item.range = new vscode.Range(position, position);
+          item.command = {
+            title: "",
+            command: "options",
+          };
           return item;
         };
 
@@ -170,9 +175,39 @@ export function activate(context: vscode.ExtensionContext) {
         }
       },
       ...triggers, // trigger
+      resolveCompletionItem(
+        item: vscode.CompletionItem,
+        token: vscode.CancellationToken
+      ) {
+        const editor = vscode.window.activeTextEditor;
+        if (editor) {
+          const position = editor.selection.active;
+          cursorPosition = position.character;
+          linePosition = position.line;
+        }
+        return item;
+      },
     }
   );
-  context.subscriptions.push(suggestEnvVariables);
+  context.subscriptions.push(
+    suggestEnvVariables,
+    vscode.commands.registerCommand("options", () => {
+      const editor = vscode.window.activeTextEditor;
+      if (editor) {
+        const position = editor.selection.active;
+        const bracketPosition = editor.document
+          .lineAt(position.line)
+          .text.indexOf("{");
+        const start = new vscode.Position(linePosition, bracketPosition + 1); // start position
+        const end = new vscode.Position(linePosition, cursorPosition); // end position
+        const range = new vscode.Range(start, end); // create range object
+        const replaceText = "";
+        const edit = new vscode.WorkspaceEdit();
+        edit.replace(editor.document.uri, range, replaceText);
+        vscode.workspace.applyEdit(edit);
+      }
+    })
+  );
 }
 
 // this method is called when your extension is deactivated
