@@ -1,18 +1,13 @@
 import * as vscode from "vscode";
 import * as fs from "fs";
 import * as path from "path";
+import { exec } from "child_process";
+
 import ExecuteCurrentFile from "./executeCurrentFile";
 import GenerateCodeSnippet from "./generateCodeSnippet";
 import GetRemoteURL from "./getRemoteUrl";
 import LanguagesData from "./languages";
-import { exec } from 'child_process';
 import triggers from "./triggers";
-
-let examplesJSONStr =
-  '{"0006_cookies.l2":"POST \\nhttps://httpbin.org/post\\n\\n# HEADERS\\nCookie:\\"sessionid=foo;another-cookie=bar\\"\\n\\nHeader1:value1\\nHeader2: Value2\\n\\n# DATA\\nhello=world","0002_sample_post.l2":"POST\\nhttps://httpbin.org/post\\n\\n{\\n  \\"a\\": \\"b\\",\\n  \\"c\\": \\"d\\"\\n}","0005_headers_simple.l2":"POST \\nhttps://httpbin.org/post\\n\\n# HEADERS\\nX-Parse-Application-Id:\'helloworld\'\\nX-Parse-REST-API-Key:\\"byeworld\\"\\n\\n# DATA\\na=\\"b\\"  # double-quoted string\\n\'c\'=d  # single-quoted & unquoted strings","0008_base64_image":{"0008_base64_image.l2":"POST\\nhttp://httpbin.org/post\\n\\n{\\n\\t\\"imageb64_field\\": \\"\'${PHOTO}\'\\",\\n}","l2.env":"\\nexport PHOTO=`base64 image.jpeg`"},"0001_sample_post_varjson.l2":"POST\\nhttps://httpbin.org/post\\n\\na=b\\nc=d","0007_multipart_file":{"0007_multipart_file.l2":"POST\\nMULTIPART\\nhttp://httpbin.org/post\\n\\n\'X-Parse-Application-Id\':helloworld \\nX-Parse-REST-API-Key:\\"helloworld\\"\\n\\n# DATA\\nfirst=second\\n\\n# FILES\\nmyfile@./image.jpeg"},"0004_env_switch_root":{"0004_env_switch_root.l2":"POST\\n${REMOTE}/post\\n\\n{\\n    \\"lorem\\": \\"ipsum\\"\\n}","l2.env":"export LOCAL=\\"http://localhost:8000\\"\\nexport REMOTE=\\"http://httpbin.org\\""},"0003_comment.l2":"# Pound symbol signifies a comment\\nPOST\\nhttps://httpbin.org/post\\n\\na=b # Comments may start at the end of lines as well\\nc=d\\n\\n# Comments work even after the payload","0000_sample_get.l2":"GET\\nhttps://httpbin.org/get","0009_processor_basic":{"0009_processor_basic.l2":"url = \\"http://google.com\\"\\n---\\n# stage 1\\n\\nPOST\\n${REMOTE_COORD}/anything\\n\\n{\\n    \\"username\\": \\"admin\\",\\n    \\"password\\": \\"Password@123\\",\\n    \\"from\\": \\"${LOCAL_COORD}/anything\\",\\n    \\"url\\": \\"${url}\\",\\n    \\"Token\\": \\"MySuperSecretToken\\"\\n}\\n\\n---\\n\\n// filtering, store in var\\nconsole.log(\\"@@Result\\", result)\\nlet TOKEN = result[\\"json\\"][\\"Token\\"]\\nconsole.log(TOKEN)\\n\\n---\\n\\n# stage 2\\nGET\\n${REMOTE_COORD}/bearer\\n\\nAuthorization: \'Bearer ${TOKEN}\'\\n\\n{}","l2.env":"\\nexport LOCAL_COORD=\\"http://localhost:8080\\"\\nexport REMOTE_COORD=\\"http://httpbin.org\\""}}';
-let examplesJSON = JSON.parse(examplesJSONStr);
-let specificExGlobal = "";
-let subSpecificExGlobal = "";
 
 interface LanguageData {
   info: {
@@ -28,86 +23,92 @@ interface LanguagesData {
   [key: string]: LanguageData;
 }
 
-export function activate(context: vscode.ExtensionContext) {
-  console.log('>>> Congratulations, your extension "Lama2" is now active!');
+let examplesJSONStr =
+  '{"0006_cookies.l2":"POST \\nhttps://httpbin.org/post\\n\\n# HEADERS\\nCookie:\\"sessionid=foo;another-cookie=bar\\"\\n\\nHeader1:value1\\nHeader2: Value2\\n\\n# DATA\\nhello=world","0002_sample_post.l2":"POST\\nhttps://httpbin.org/post\\n\\n{\\n  \\"a\\": \\"b\\",\\n  \\"c\\": \\"d\\"\\n}","0005_headers_simple.l2":"POST \\nhttps://httpbin.org/post\\n\\n# HEADERS\\nX-Parse-Application-Id:\'helloworld\'\\nX-Parse-REST-API-Key:\\"byeworld\\"\\n\\n# DATA\\na=\\"b\\"  # double-quoted string\\n\'c\'=d  # single-quoted & unquoted strings","0008_base64_image":{"0008_base64_image.l2":"POST\\nhttp://httpbin.org/post\\n\\n{\\n\\t\\"imageb64_field\\": \\"\'${PHOTO}\'\\",\\n}","l2.env":"\\nexport PHOTO=`base64 image.jpeg`"},"0001_sample_post_varjson.l2":"POST\\nhttps://httpbin.org/post\\n\\na=b\\nc=d","0007_multipart_file":{"0007_multipart_file.l2":"POST\\nMULTIPART\\nhttp://httpbin.org/post\\n\\n\'X-Parse-Application-Id\':helloworld \\nX-Parse-REST-API-Key:\\"helloworld\\"\\n\\n# DATA\\nfirst=second\\n\\n# FILES\\nmyfile@./image.jpeg"},"0004_env_switch_root":{"0004_env_switch_root.l2":"POST\\n${REMOTE}/post\\n\\n{\\n    \\"lorem\\": \\"ipsum\\"\\n}","l2.env":"export LOCAL=\\"http://localhost:8000\\"\\nexport REMOTE=\\"http://httpbin.org\\""},"0003_comment.l2":"# Pound symbol signifies a comment\\nPOST\\nhttps://httpbin.org/post\\n\\na=b # Comments may start at the end of lines as well\\nc=d\\n\\n# Comments work even after the payload","0000_sample_get.l2":"GET\\nhttps://httpbin.org/get","0009_processor_basic":{"0009_processor_basic.l2":"url = \\"http://google.com\\"\\n---\\n# stage 1\\n\\nPOST\\n${REMOTE_COORD}/anything\\n\\n{\\n    \\"username\\": \\"admin\\",\\n    \\"password\\": \\"Password@123\\",\\n    \\"from\\": \\"${LOCAL_COORD}/anything\\",\\n    \\"url\\": \\"${url}\\",\\n    \\"Token\\": \\"MySuperSecretToken\\"\\n}\\n\\n---\\n\\n// filtering, store in var\\nconsole.log(\\"@@Result\\", result)\\nlet TOKEN = result[\\"json\\"][\\"Token\\"]\\nconsole.log(TOKEN)\\n\\n---\\n\\n# stage 2\\nGET\\n${REMOTE_COORD}/bearer\\n\\nAuthorization: \'Bearer ${TOKEN}\'\\n\\n{}","l2.env":"\\nexport LOCAL_COORD=\\"http://localhost:8080\\"\\nexport REMOTE_COORD=\\"http://httpbin.org\\""}}';
+let examplesJSON = JSON.parse(examplesJSONStr);
+let specificExGlobal = "";
+let subSpecificExGlobal = "";
+let envVars = [] as string[];
+let cursorPosition = 0;
 
-  // Level1 command pallette 
+function execCurL2File(context: vscode.ExtensionContext) {
+  let executeCurrentFile = new ExecuteCurrentFile(context);
+  return vscode.commands.registerCommand("lama2.ExecuteCurrentFile", () =>
+    executeCurrentFile.execFile()
+  );
+}
+
+function getRemoteUrl(context: vscode.ExtensionContext) {
   let getremoteUrl = new GetRemoteURL(context);
+  console.log(getremoteUrl);
   let getremoteUrlFileDisposable = vscode.commands.registerCommand(
     "lama2.GetRemoteURL",
     () => getremoteUrl.findURL()
   );
-  context.subscriptions.push(getremoteUrlFileDisposable);
+  return getremoteUrlFileDisposable;
+}
 
-  // Level1 command pallette
-  let executeCurrentFile = new ExecuteCurrentFile(context);
+function prettifyL2File() {
+  return vscode.commands.registerCommand("lama2.PrettifyCurrentFile", () => {
+    console.log("Executing prettify command");
+    exec(`l2 -b ${vscode.window.activeTextEditor?.document.fileName}`);
+  });
+}
 
-  let executeCurrentFileDisposable = vscode.commands.registerCommand(
-    "lama2.ExecuteCurrentFile",
-    () => executeCurrentFile.execFile()
-  );
+function genLama2Examples() {
+  return vscode.commands.registerCommand("lama2.Lama2Examples", async () => {
+    let specificEx: string | undefined = await vscode.window.showQuickPick(
+      Object.keys(examplesJSON)
+    );
 
-  context.subscriptions.push(executeCurrentFileDisposable);
+    if (specificEx) {
+      specificExGlobal = specificEx;
+      if (specificEx.endsWith(".env") || specificEx.endsWith(".l2")) {
+        vscode.window.activeTextEditor?.edit((builder) => {
+          const doc = vscode.window.activeTextEditor?.document;
+          builder.replace(
+            new vscode.Range(
+              doc!.lineAt(0).range.start,
+              doc!.lineAt(doc!.lineCount - 1).range.end
+            ),
+            examplesJSON[specificExGlobal]
+          );
+        });
+        return;
+      }
 
-  // Level1 command pallette
-
-  let prettifyCurrentFileDisposable = vscode.commands.registerCommand(
-    "lama2.PrettifyCurrentFile",
-    () => {
-      console.log("Executing prettify command");
-      exec(`l2 -b ${vscode.window.activeTextEditor?.document.fileName}`);
-    }
-  );
-  context.subscriptions.push(prettifyCurrentFileDisposable);
-
-  let generateCodeSnippet = new GenerateCodeSnippet();
-  let lama2Examples = vscode.commands.registerCommand(
-    "lama2.Lama2Examples",
-    async () => {
-      let specificEx: string | undefined = await vscode.window.showQuickPick(
-        Object.keys(examplesJSON)
+      let subSpecificEx: string | undefined = await vscode.window.showQuickPick(
+        Object.keys(examplesJSON[specificEx])
       );
 
-      if (specificEx) {
-        specificExGlobal = specificEx;
-        if (specificEx.endsWith(".env") || specificEx.endsWith(".l2")) {
-          vscode.window.activeTextEditor?.edit((builder) => {
-            const doc = vscode.window.activeTextEditor?.document;
-            builder.replace(
-              new vscode.Range(
-                doc!.lineAt(0).range.start,
-                doc!.lineAt(doc!.lineCount - 1).range.end
-              ),
-              examplesJSON[specificExGlobal]
-            );
-          });
-          return;
-        }
-
-        let subSpecificEx: string | undefined =
-          await vscode.window.showQuickPick(
-            Object.keys(examplesJSON[specificEx])
+      if (subSpecificEx) {
+        subSpecificExGlobal = subSpecificEx;
+        vscode.window.activeTextEditor?.edit((builder) => {
+          const doc = vscode.window.activeTextEditor?.document;
+          builder.replace(
+            new vscode.Range(
+              doc!.lineAt(0).range.start,
+              doc!.lineAt(doc!.lineCount - 1).range.end
+            ),
+            examplesJSON[specificExGlobal][subSpecificExGlobal]
           );
-
-        if (subSpecificEx) {
-          subSpecificExGlobal = subSpecificEx;
-          vscode.window.activeTextEditor?.edit((builder) => {
-            const doc = vscode.window.activeTextEditor?.document;
-            builder.replace(
-              new vscode.Range(
-                doc!.lineAt(0).range.start,
-                doc!.lineAt(doc!.lineCount - 1).range.end
-              ),
-              examplesJSON[specificExGlobal][subSpecificExGlobal]
-            );
-          });
-          return;
-        }
+        });
+        return;
       }
     }
-  );
+  });
+}
 
-  // Level1 command pallette
+function isDefault(defaultClient: string, client: string) {
+  if (defaultClient == client) {
+    return "(Default)";
+  } else {
+    return "";
+  }
+}
+
+function genCodeSnip() {
+  let generateCodeSnippet = new GenerateCodeSnippet();
   let generateCodeSnippetDisposable = vscode.commands.registerCommand(
     "lama2.GenerateCodeSnippet",
     async () => {
@@ -175,44 +176,84 @@ export function activate(context: vscode.ExtensionContext) {
       }
     }
   );
-  context.subscriptions.push(generateCodeSnippetDisposable);
+  return generateCodeSnippetDisposable;
+}
 
-  let envVariables = [] as string[];
-  const activeTextEditor = vscode.window.activeTextEditor;
-  if (activeTextEditor) {
-    const activeFilePath = activeTextEditor.document.uri.fsPath;
-    const envFilePath = path.join(path.dirname(activeFilePath), "l2.env");
-    fs.readFile(envFilePath, "utf8", (err, data) => {
-      if (err) {
-        console.error(err);
-        return;
-      }
-
-      envVariables = data
-        .split("\n")
-        .filter((line) => line.startsWith("export"))
-        .map((line) => line.split("=")[0].replace("export ", ""));
-      console.log("envVariables -> ", envVariables);
-    });
+function getEnvFromL2DotEnv(): string[] {
+  const editor = vscode.window.activeTextEditor;
+  if (!editor) {
+    return [];
   }
-  let cursorPosition: any;
-  let linePosition: any;
 
+  const l2FilePath = editor.document.fileName;
+  if (!l2FilePath.endsWith(".l2")) {
+    return [];
+  }
 
+  const l2FileDir = path.dirname(l2FilePath);
+  const envFilePath = path.join(l2FileDir, "l2.env");
 
-  let suggestEnvVariables = vscode.languages.registerCompletionItemProvider(
+  if (!fs.existsSync(envFilePath)) {
+    vscode.window.showInformationMessage(
+      "Could not find 'l2.env' file to suggest variables, sorry."
+    );
+    return [];
+  }
+
+  const envFileContent = fs.readFileSync(envFilePath, "utf-8");
+  const envVarRegex = /^export\s+([^\s=]+)=/gm;
+
+  const envVars: string[] = [];
+  let match: RegExpExecArray | null;
+  while ((match = envVarRegex.exec(envFileContent))) {
+    envVars.push(match[1]);
+  }
+
+  return envVars;
+}
+
+function getENVS() {
+  return vscode.workspace.onDidChangeTextDocument((event) => {
+    let editor = vscode.window.activeTextEditor;
+    if (
+      editor &&
+      event.document === editor.document &&
+      event.contentChanges.length > 0
+    ) {
+      // Check if the file has an extension of .l2
+      if (event.document.fileName.endsWith(".l2")) {
+        // Check if the cursor is in between these ${} by using regular expressions
+        let currentLine = editor.document.lineAt(editor.selection.active.line);
+        let cursorPosition = editor.selection.active.character;
+        let lineText = currentLine.text;
+        let regex = /\${.*/g;
+        let match = regex.exec(lineText);
+        while (match) {
+          let matchIndex = match.index + currentLine.range.start.character;
+          if (
+            cursorPosition > matchIndex &&
+            cursorPosition < matchIndex + match[0].length
+          ) {
+            let cursorPos = cursorPosition + 1;
+            cursorPosition = cursorPos;
+            envVars = getEnvFromL2DotEnv();
+            console.log("Environment variables:", envVars);
+            // envVars looks like this ['zzz', 'KARMA_CORE_URL', 'third', 'fourth', 'fifth']
+            break;
+          }
+          match = regex.exec(lineText);
+        }
+      }
+    }
+  });
+}
+
+function suggestENVS() {
+  return vscode.languages.registerCompletionItemProvider(
     { language: "lama2", scheme: "file" },
     {
       // eslint-disable-next-line no-unused-vars
       provideCompletionItems(document, position, token, context) {
-        // get all text until the `position` and check if it reads `${`
-
-        const linePrefix = document
-          .lineAt(position)
-          .text.substring(0, position.character);
-        if (!linePrefix.endsWith("${")) {
-          return undefined;
-        }
         let createSuggestion = (text: string) => {
           let item = new vscode.CompletionItem(
             text,
@@ -221,17 +262,32 @@ export function activate(context: vscode.ExtensionContext) {
           item.range = new vscode.Range(position, position);
           item.command = {
             title: "",
-            command: "options",
+            command: "envoptions",
           };
           return item;
         };
-        const suggestionsArray = envVariables.map((item, index) => {
+
+        const currentLine = document.lineAt(position.line).text;
+        const triggerPrefix = currentLine
+          .substring(0, position.character)
+          .includes("${");
+        const triggerPostfix = currentLine
+          .substring(position.character)
+          .includes("}");
+
+        const suggestionsArray = envVars.map((item, index) => {
           return createSuggestion(item);
         });
 
-        return suggestionsArray;
+        if (triggerPrefix == true && triggerPostfix == false) {
+          return suggestionsArray;
+        } else if (triggerPrefix == true) {
+          return suggestionsArray;
+        } else {
+          return [];
+        }
       },
-      ...triggers, // trigger
+      ...triggers, //triggers for activating the suggestions
       resolveCompletionItem(
         item: vscode.CompletionItem,
         token: vscode.CancellationToken
@@ -240,40 +296,77 @@ export function activate(context: vscode.ExtensionContext) {
         if (editor) {
           const position = editor.selection.active;
           cursorPosition = position.character;
-          linePosition = position.line;
         }
         return item;
       },
     }
   );
+}
+
+function replaceTextAfterEnvSelected() {
+  const editor = vscode.window.activeTextEditor;
+  if (editor) {
+    let position = editor.selection.active;
+    let lineText = editor.document.lineAt(position.line).text;
+    let linePosition = editor.document.lineAt(position.line).range.start
+      .character;
+    let openingBraceIndex = lineText.indexOf("{", linePosition);
+    if (openingBraceIndex >= 0 && cursorPosition > openingBraceIndex) {
+      let newText = lineText.substring(0, openingBraceIndex + 1);
+      newText += lineText.substring(cursorPosition);
+      let edit = new vscode.WorkspaceEdit();
+      let range = new vscode.Range(
+        position.line,
+        0,
+        position.line,
+        lineText.length
+      );
+      edit.replace(editor.document.uri, range, newText);
+      vscode.workspace.applyEdit(edit);
+    }
+  }
+}
+
+export function activate(context: vscode.ExtensionContext) {
+  console.log('>>> Congratulations, your extension "Lama2" is now active!');
+
+  // Level1 command pallette
+  let executeCurrentFileDisposable = execCurL2File(context);
+  context.subscriptions.push(executeCurrentFileDisposable);
+  console.log(">>> executeCurrentFileDisposable is now active!");
+
+  // Level1 command pallette
+  let getremoteUrlFileDisposable = getRemoteUrl(context);
+  context.subscriptions.push(getremoteUrlFileDisposable);
+  console.log(">>> getremoteUrlFileDisposable is now active!");
+
+  // Level1 command pallette
+  let prettifyCurrentFileDisposable = prettifyL2File();
+  context.subscriptions.push(prettifyCurrentFileDisposable);
+  console.log(">>> prettifyCurrentFileDisposable is now active!");
+
+  // Level1 command pallette
+  let lama2Examples = genLama2Examples();
+  console.log(">>> lama2Examples is now active!");
+
+  // Level1 command pallette
+  let generateCodeSnippetDisposable = genCodeSnip();
+  context.subscriptions.push(generateCodeSnippetDisposable);
+  console.log(">>> generateCodeSnippetDisposable is now active!");
+
+  let envsDisposable = getENVS();
+  context.subscriptions.push(envsDisposable);
+  console.log(">>> envsDisposable is now active!");
+
+  let suggestEnvVariables = suggestENVS();
   context.subscriptions.push(
     suggestEnvVariables,
-    vscode.commands.registerCommand("options", () => {
-      const editor = vscode.window.activeTextEditor;
-      if (editor) {
-        const position = editor.selection.active;
-        const bracketPosition = editor.document
-          .lineAt(position.line)
-          .text.indexOf("{");
-        const start = new vscode.Position(linePosition, bracketPosition + 1); // start position
-        const end = new vscode.Position(linePosition, cursorPosition); // end position
-        const range = new vscode.Range(start, end); // create range object
-        const replaceText = "";
-        const edit = new vscode.WorkspaceEdit();
-        edit.replace(editor.document.uri, range, replaceText);
-        vscode.workspace.applyEdit(edit);
-      }
+    vscode.commands.registerCommand("envoptions", () => {
+      // This method is activated when the user selects a suggested env variable.
+      replaceTextAfterEnvSelected();
     })
   );
 }
 
 // this method is called when your extension is deactivated
 export function deactivate() {}
-
-function isDefault(defaultClient: string, client: string) {
-  if (defaultClient == client) {
-    return "(Default)";
-  } else {
-    return "";
-  }
-}
