@@ -1,13 +1,11 @@
 import * as vscode from "vscode";
-import * as fs from "fs";
-import * as path from "path";
 import { exec } from "child_process";
 
 import ExecuteCurrentFile from "./executeCurrentFile";
 import GenerateCodeSnippet from "./generateCodeSnippet";
 import GetRemoteURL from "./getRemoteUrl";
 import LanguagesData from "./languages";
-import triggers from "./triggers";
+import { replaceTextAfterEnvSelected, suggestENVS } from "./suggestEnvironmentVars";
 
 interface LanguageData {
   info: {
@@ -28,8 +26,7 @@ let examplesJSONStr =
 let examplesJSON = JSON.parse(examplesJSONStr);
 let specificExGlobal = "";
 let subSpecificExGlobal = "";
-let envVars = [] as string[];
-let cursorPosition = 0;
+
 
 function execCurL2File(context: vscode.ExtensionContext) {
   let executeCurrentFile = new ExecuteCurrentFile(context);
@@ -149,25 +146,25 @@ function genCodeSnip() {
           // Level3 command pallette
           const selection:
             | {
-                label: string;
-                language: string;
-                client: string;
-              }
+              label: string;
+              language: string;
+              client: string;
+            }
             | undefined = await vscode.window.showQuickPick(
-            clientKeys
-              .sort((a, b) =>
-                a === defaultClient ? -1 : b === defaultClient ? 1 : 0
-              )
-              .map((client) => ({
-                label: `${language ?? ""}: ${client} ${isDefault(
-                  defaultClient,
-                  client
-                )}`,
-                language: language ?? "",
-                client: client,
-              })),
-            { placeHolder: "Select a client" }
-          );
+              clientKeys
+                .sort((a, b) =>
+                  a === defaultClient ? -1 : b === defaultClient ? 1 : 0
+                )
+                .map((client) => ({
+                  label: `${language ?? ""}: ${client} ${isDefault(
+                    defaultClient,
+                    client
+                  )}`,
+                  language: language ?? "",
+                  client: client,
+                })),
+              { placeHolder: "Select a client" }
+            );
 
           if (selection) {
             generateCodeSnippet.execFile(selection.language, selection.client);
@@ -179,153 +176,6 @@ function genCodeSnip() {
   return generateCodeSnippetDisposable;
 }
 
-function getEnvFromL2DotEnv(): string[] {
-  const editor = vscode.window.activeTextEditor;
-  if (!editor) {
-    return [];
-  }
-
-  const l2FilePath = editor.document.fileName;
-  if (!l2FilePath.endsWith(".l2")) {
-    return [];
-  }
-
-  const l2FileDir = path.dirname(l2FilePath);
-  const envFilePath = path.join(l2FileDir, "l2.env");
-
-  if (!fs.existsSync(envFilePath)) {
-    vscode.window.showInformationMessage(
-      "Could not find 'l2.env' file to suggest variables, sorry."
-    );
-    return [];
-  }
-
-  const envFileContent = fs.readFileSync(envFilePath, "utf-8");
-  const envVarRegex = /^export\s+([^\s=]+)=/gm;
-
-  const envVars: string[] = [];
-  let match: RegExpExecArray | null;
-  while ((match = envVarRegex.exec(envFileContent))) {
-    envVars.push(match[1]);
-  }
-
-  return envVars;
-}
-
-function getENVS() {
-  return vscode.workspace.onDidChangeTextDocument((event) => {
-    let editor = vscode.window.activeTextEditor;
-    if (
-      editor &&
-      event.document === editor.document &&
-      event.contentChanges.length > 0
-    ) {
-      // Check if the file has an extension of .l2
-      if (event.document.fileName.endsWith(".l2")) {
-        // Check if the cursor is in between these ${} by using regular expressions
-        let currentLine = editor.document.lineAt(editor.selection.active.line);
-        let cursorPosition = editor.selection.active.character;
-        let lineText = currentLine.text;
-        let regex = /\${.*/g;
-        let match = regex.exec(lineText);
-        while (match) {
-          let matchIndex = match.index + currentLine.range.start.character;
-          if (
-            cursorPosition > matchIndex &&
-            cursorPosition < matchIndex + match[0].length
-          ) {
-            let cursorPos = cursorPosition + 1;
-            cursorPosition = cursorPos;
-            envVars = getEnvFromL2DotEnv();
-            console.log("Environment variables:", envVars);
-            // envVars looks like this ['zzz', 'KARMA_CORE_URL', 'third', 'fourth', 'fifth']
-            break;
-          }
-          match = regex.exec(lineText);
-        }
-      }
-    }
-  });
-}
-
-function suggestENVS() {
-  return vscode.languages.registerCompletionItemProvider(
-    { language: "lama2", scheme: "file" },
-    {
-      // eslint-disable-next-line no-unused-vars
-      provideCompletionItems(document, position, token, context) {
-        let createSuggestion = (text: string) => {
-          let item = new vscode.CompletionItem(
-            text,
-            vscode.CompletionItemKind.Text
-          );
-          item.range = new vscode.Range(position, position);
-          item.command = {
-            title: "",
-            command: "envoptions",
-          };
-          return item;
-        };
-
-        const currentLine = document.lineAt(position.line).text;
-        const triggerPrefix = currentLine
-          .substring(0, position.character)
-          .includes("${");
-        const triggerPostfix = currentLine
-          .substring(position.character)
-          .includes("}");
-
-        const suggestionsArray = envVars.map((item, index) => {
-          return createSuggestion(item);
-        });
-
-        if (triggerPrefix == true && triggerPostfix == false) {
-          return suggestionsArray;
-        } else if (triggerPrefix == true) {
-          return suggestionsArray;
-        } else {
-          return [];
-        }
-      },
-      ...triggers, //triggers for activating the suggestions
-      resolveCompletionItem(
-        item: vscode.CompletionItem,
-        token: vscode.CancellationToken
-      ) {
-        const editor = vscode.window.activeTextEditor;
-        if (editor) {
-          const position = editor.selection.active;
-          cursorPosition = position.character;
-        }
-        return item;
-      },
-    }
-  );
-}
-
-function replaceTextAfterEnvSelected() {
-  const editor = vscode.window.activeTextEditor;
-  if (editor) {
-    let position = editor.selection.active;
-    let lineText = editor.document.lineAt(position.line).text;
-    let linePosition = editor.document.lineAt(position.line).range.start
-      .character;
-    let openingBraceIndex = lineText.indexOf("{", linePosition);
-    if (openingBraceIndex >= 0 && cursorPosition > openingBraceIndex) {
-      let newText = lineText.substring(0, openingBraceIndex + 1);
-      newText += lineText.substring(cursorPosition);
-      let edit = new vscode.WorkspaceEdit();
-      let range = new vscode.Range(
-        position.line,
-        0,
-        position.line,
-        lineText.length
-      );
-      edit.replace(editor.document.uri, range, newText);
-      vscode.workspace.applyEdit(edit);
-    }
-  }
-}
 
 export function activate(context: vscode.ExtensionContext) {
   console.log('>>> Congratulations, your extension "Lama2" is now active!');
@@ -354,10 +204,6 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(generateCodeSnippetDisposable);
   console.log(">>> generateCodeSnippetDisposable is now active!");
 
-  let envsDisposable = getENVS();
-  context.subscriptions.push(envsDisposable);
-  console.log(">>> envsDisposable is now active!");
-
   let suggestEnvVariables = suggestENVS();
   context.subscriptions.push(
     suggestEnvVariables,
@@ -369,4 +215,4 @@ export function activate(context: vscode.ExtensionContext) {
 }
 
 // this method is called when your extension is deactivated
-export function deactivate() {}
+export function deactivate() { }
