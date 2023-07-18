@@ -16,14 +16,11 @@ export function getEnvsFromEnvCommand(): {} {
   }
 
   try {
+    // Execute the command and read the stdout for JSON of all the env's 
+
     // const commandOutput = execSync(`./build/l2 --env ${l2FilePath}`, { cwd: "/home/lovestaco/repos/Lama2", }).toString(); // For local debugging 
     const commandOutput = execSync(`l2 --env ${l2FilePath}`).toString();
-
-    const mapStartIndex = commandOutput.indexOf("{");
-    const mapEndIndex = commandOutput.lastIndexOf("}");
-    const envMapStr = commandOutput.substring(mapStartIndex, mapEndIndex + 1);
-
-    const envMap = JSON.parse(envMapStr);
+    const envMap = JSON.parse(commandOutput);
     return envMap;
   } catch (error) {
     console.error("Error executing the command:", error);
