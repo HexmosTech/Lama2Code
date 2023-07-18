@@ -57,4 +57,12 @@ class GetRemoteURL {
     }
 }
 
-export default GetRemoteURL;
+export function getRemoteUrl(context: vscode.ExtensionContext) {
+    let getremoteUrl = new GetRemoteURL(context);
+    console.log(getremoteUrl);
+    let getremoteUrlFileDisposable = vscode.commands.registerCommand(
+        "lama2.GetRemoteURL",
+        () => getremoteUrl.findURL()
+    );
+    return getremoteUrlFileDisposable;
+}

@@ -64,7 +64,7 @@ class ExecuteCurrentFile {
         let windowsBasePath = "C:\\ProgramData\\.lama2"
         let randomNameBase = this.generateRandomName(8)
         let currentFilePath = vscode.window.activeTextEditor?.document.fileName
-        
+
         if (process.platform === "win32") {
             if (!fs.existsSync(windowsBasePath)) {
                 fs.mkdirSync(windowsBasePath)
@@ -72,9 +72,9 @@ class ExecuteCurrentFile {
             randomNameFlag = `${windowsBasePath}\\${randomNameBase}.flag`
             randomNameFile = `${windowsBasePath}\\${randomNameBase}.json`
             cmd = `powershell l2 -o ${randomNameFile} ${currentFilePath}; New-Item -Path ${randomNameFlag}`
-        }else {
-            randomNameFlag = `/tmp/${randomNameBase}.flag` 
-            randomNameFile = `/tmp/${randomNameBase}.json` 
+        } else {
+            randomNameFlag = `/tmp/${randomNameBase}.flag`
+            randomNameFile = `/tmp/${randomNameBase}.json`
             cmd = `l2 -o ${randomNameFile} ${currentFilePath}; touch ${randomNameFlag}`
         }
         return {
@@ -257,4 +257,10 @@ class ExecuteCurrentFile {
 
 }
 
-export default ExecuteCurrentFile
+export function execCurL2File(context: vscode.ExtensionContext) {
+    let executeCurrentFile = new ExecuteCurrentFile(context);
+    return vscode.commands.registerCommand("lama2.ExecuteCurrentFile", () =>
+        executeCurrentFile.execFile()
+    );
+}
+

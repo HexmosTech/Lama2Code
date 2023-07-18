@@ -45,7 +45,7 @@ function createSuggestion(env: string, envVal: string, envSrc: string, position:
 
 }
 
-export function suggestENVS() {
+export function suggestENVs() {
   return vscode.languages.registerCompletionItemProvider(
     { language: "lama2", scheme: "file" },
     {
