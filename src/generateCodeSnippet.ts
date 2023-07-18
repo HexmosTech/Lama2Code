@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import ChokiExtension from "./watchFile";
 let fs = require("fs");
 import { window } from "vscode";
+import LanguagesData from "./languages";
 
 class GenerateCodeSnippet {
   LAMA2_TERM_NAME = "AutoLama2";
@@ -110,4 +111,98 @@ class GenerateCodeSnippet {
   }
 }
 
-export default GenerateCodeSnippet;
+
+function isDefault(defaultClient: string, client: string) {
+  if (defaultClient == client) {
+    return "(Default)";
+  } else {
+    return "";
+  }
+}
+
+interface LanguageData {
+  info: {
+    key: string;
+    title: string;
+    extname: string;
+    default: string;
+  };
+  clientsById: Record<string, null>;
+}
+
+interface LanguagesData {
+  [key: string]: LanguageData;
+}
+
+export function genCodeSnip() {
+  let generateCodeSnippet = new GenerateCodeSnippet();
+  let generateCodeSnippetDisposable = vscode.commands.registerCommand(
+    "lama2.GenerateCodeSnippet",
+    async () => {
+      const langkwys = Object.keys(LanguagesData);
+      let languageOptions: { [key: string]: string } = {};
+      for (let i = 0; i < langkwys.length; i++) {
+        const key = langkwys[i] as keyof typeof LanguagesData;
+        const languageData = LanguagesData[key];
+        languageOptions[languageData.info.title] = languageData.info.key;
+      }
+
+      const languageKeys = Object.keys(LanguagesData);
+
+      // Level2 command pallette
+      let language: string | undefined = await vscode.window.showQuickPick(
+        Object.keys(languageOptions)
+      );
+
+      if (language) {
+        language = languageOptions[language];
+        const languageKey = languageKeys.find(
+          (key) =>
+            LanguagesData[key as keyof typeof LanguagesData].info.key ===
+            language
+        )!;
+
+        const clientsById =
+          LanguagesData[languageKey as keyof typeof LanguagesData].clientsById;
+        const defaultClient =
+          LanguagesData[languageKey as keyof typeof LanguagesData].info.default;
+
+        const clientKeys = Object.keys(clientsById);
+
+        if (clientKeys.length === 1) {
+          const client = clientKeys[0];
+          generateCodeSnippet.execFile(language, client);
+        } else {
+          // Level3 command pallette
+          const selection:
+            | {
+              label: string;
+              language: string;
+              client: string;
+            }
+            | undefined = await vscode.window.showQuickPick(
+              clientKeys
+                .sort((a, b) =>
+                  a === defaultClient ? -1 : b === defaultClient ? 1 : 0
+                )
+                .map((client) => ({
+                  label: `${language ?? ""}: ${client} ${isDefault(
+                    defaultClient,
+                    client
+                  )}`,
+                  language: language ?? "",
+                  client: client,
+                })),
+              { placeHolder: "Select a client" }
+            );
+
+          if (selection) {
+            generateCodeSnippet.execFile(selection.language, selection.client);
+          }
+        }
+      }
+    }
+  );
+  return generateCodeSnippetDisposable;
+}
+
