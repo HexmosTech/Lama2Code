@@ -6,6 +6,7 @@ import { replaceTextAfterEnvSelected, suggestENVs } from "./suggestEnvironmentVa
 import { genLama2Examples } from "./genLama2Examples";
 import { execCurL2File } from "./executeCurrentFile";
 import { prettifyL2File } from "./prettifyL2File";
+import { checkL2Version } from "./checkL2Version";
 
 export function activate(context: vscode.ExtensionContext) {
   console.log('>>> Congratulations, your extension "Lama2" is now active!');
@@ -33,6 +34,9 @@ export function activate(context: vscode.ExtensionContext) {
   let generateCodeSnippetDisposable = genCodeSnip();
   context.subscriptions.push(generateCodeSnippetDisposable);
   console.log(">>> generateCodeSnippetDisposable is now active!");
+
+  // Automatically check L2 version on extension activation
+  checkL2Version();
 
   let suggestEnvVariables = suggestENVs();
   context.subscriptions.push(
