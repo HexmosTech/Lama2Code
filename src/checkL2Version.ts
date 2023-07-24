@@ -1,16 +1,17 @@
-import { exec } from "child_process";
+import { exec, execSync } from "child_process";
+import * as semver from "semver";
 import * as vscode from "vscode";
 import { getShowLama2Term } from "./utils";
 
-const MIN_VERSION_TO_CHECK = "1.5.2";
+const MIN_VERSION_TO_CHECK = "1.5.1";
 const LAMA2_TERM_NAME = "AutoLama2";
 const UPDATE_MSG = "Support for environment variables.";
 
 export function checkL2Version() {
   try {
     getL2Version((l2Version) => {
-      // Check if version is below MIN_VERSION_TO_CHECK
-      if (compareL2Versions(l2Version, MIN_VERSION_TO_CHECK) < 0) {
+      // Check if l2Version is less than MIN_VERSION_TO_CHECK
+      if (semver.lt(l2Version, MIN_VERSION_TO_CHECK)) {
         showUpdateWarning();
       }
     });
@@ -20,36 +21,21 @@ export function checkL2Version() {
 }
 
 function getL2Version(callback: (version: string) => void) {
-  exec("l2 --version", (error, stdout, stderr) => {
-    const versionOutput = stdout.trim();
-    const versionMatch = versionOutput.match(/v(\d+\.\d+\.\d+)/);
-    if (versionMatch && versionMatch.length === 2) {
-      const l2Version = versionMatch[1];
-      callback(l2Version);
-    }
-  });
-}
-
-function compareL2Versions(currentVersion: string, latestVersion: string) {
-  const curVersionParts = currentVersion.split(".");
-  const lstVersionParts = latestVersion.split(".");
-  for (let i = 0; i < 3; i++) {
-    const curNum = Number(curVersionParts[i]);
-    const lstNum = Number(lstVersionParts[i]);
-    if (curNum > lstNum) {
-      return 1;
-    }
-    if (lstNum > curNum) {
-      return -1;
-    }
-    if (!isNaN(curNum) && isNaN(lstNum)) {
-      return 1;
-    }
-    if (isNaN(curNum) && !isNaN(lstNum)) {
-      return -1;
+  try {
+    const l2Version = execSync("l2 --version", { encoding: 'utf-8' }).trim();
+    // Use the semver library to validate and normalize the version string
+    const normalizedVersion = semver.valid(l2Version);
+    if (normalizedVersion) {
+      callback(normalizedVersion);
+    } else {
+      throw new Error("Invalid version format: " + l2Version);
     }
   }
-  return 0;
+  catch (err: any) {
+    console.log("Error: getL2Version() ", err);
+    throw new Error("Problem while reading version");
+
+  }
 }
 
 function showUpdateWarning() {
