@@ -2,14 +2,15 @@ import { exec } from "child_process";
 import * as vscode from "vscode";
 import { getShowLama2Term } from "./utils";
 
-const VERSION_TO_CHECK = "1.5.1";
+const MIN_VERSION_TO_CHECK = "1.5.2";
 const LAMA2_TERM_NAME = "AutoLama2";
+const UPDATE_MSG = "Support for environment variables.";
 
 export function checkL2Version() {
   try {
     getL2Version((l2Version) => {
-      // Check if version is below VERSION_TO_CHECK
-      if (compareL2Versions(l2Version, VERSION_TO_CHECK) < 0) {
+      // Check if version is below MIN_VERSION_TO_CHECK
+      if (compareL2Versions(l2Version, MIN_VERSION_TO_CHECK) < 0) {
         showUpdateWarning();
       }
     });
@@ -35,10 +36,18 @@ function compareL2Versions(currentVersion: string, latestVersion: string) {
   for (let i = 0; i < 3; i++) {
     const curNum = Number(curVersionParts[i]);
     const lstNum = Number(lstVersionParts[i]);
-    if (curNum > lstNum) return 1;
-    if (lstNum > curNum) return -1;
-    if (!isNaN(curNum) && isNaN(lstNum)) return 1;
-    if (isNaN(curNum) && !isNaN(lstNum)) return -1;
+    if (curNum > lstNum) {
+      return 1;
+    }
+    if (lstNum > curNum) {
+      return -1;
+    }
+    if (!isNaN(curNum) && isNaN(lstNum)) {
+      return 1;
+    }
+    if (isNaN(curNum) && !isNaN(lstNum)) {
+      return -1;
+    }
   }
   return 0;
 }
@@ -47,7 +56,7 @@ function showUpdateWarning() {
   const updateAction: vscode.MessageItem = { title: "Update" };
   vscode.window
     .showWarningMessage(
-      `Your Lama2 version is outdated. Please update to version ${VERSION_TO_CHECK} or above for the best experience.`,
+      `Your Lama2 version is outdated. \nPlease update to version ${MIN_VERSION_TO_CHECK} or above for the best experience.\nUpdate: ${UPDATE_MSG}`,
       updateAction
     )
     .then((selectedAction) => {
