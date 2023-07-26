@@ -11,7 +11,7 @@ import { getL2VersionAndUpdatePrompt } from "./checkL2Version";
 
 const MIN_VERSION_TO_CHECK = "1.5.1";
 
-export async function activate(context: vscode.ExtensionContext) {
+export function activate(context: vscode.ExtensionContext) {
   console.log('>>> Congratulations, your extension "Lama2" is now active!');
 
   // Level1 command pallette
@@ -40,7 +40,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
   // Automatically check L2 version on extension activation
   let suggestEnvVariables: any;
-  let l2Version = await getL2VersionAndUpdatePrompt(MIN_VERSION_TO_CHECK);
+  let l2Version = getL2VersionAndUpdatePrompt(MIN_VERSION_TO_CHECK);
   if (l2Version === null || l2Version === undefined || semver.lt(l2Version, MIN_VERSION_TO_CHECK)) {
     getDotENVS();
     suggestEnvVariables = suggestENVSFromDotEnv();

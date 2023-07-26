@@ -6,7 +6,7 @@ import { getShowLama2Term } from "./utils";
 const LAMA2_TERM_NAME = "AutoLama2";
 const UPDATE_MSG = "Support for environment variables.";
 
-export async function getL2VersionAndUpdatePrompt(minVersionToCheck: string) {
+export function getL2VersionAndUpdatePrompt(minVersionToCheck: string) {
   try {
     const l2Version = execSync("l2 --version", { encoding: 'utf-8' }).trim();
     // Use the semver library to validate and normalize the version string
