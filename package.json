@@ -2,7 +2,7 @@
   "name": "Lama2",
   "displayName": "Lama2",
   "description": "Nifty VSCode UI for Lama2, the plain-text powered API client",
-  "version": "2.6.0",
+  "version": "2.7.0",
   "publisher": "Hexmos",
   "license": "SEE LICENSE IN LICENSE",
   "icon": "lama2.png",
