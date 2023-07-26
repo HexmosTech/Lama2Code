@@ -1,14 +1,17 @@
 import * as vscode from "vscode";
+import * as semver from "semver";
 
 import { genCodeSnip } from "./generateCodeSnippet";
 import { getRemoteUrl } from "./getRemoteUrl";
-import { replaceTextAfterEnvSelected, suggestENVs } from "./suggestEnvironmentVars";
+import { getDotENVS, replaceTextAfterEnvSelected, suggestENVSFromDotEnv, suggestENVs } from "./suggestEnvironmentVars";
 import { genLama2Examples } from "./genLama2Examples";
 import { execCurL2File } from "./executeCurrentFile";
 import { prettifyL2File } from "./prettifyL2File";
-import { checkL2Version } from "./checkL2Version";
+import { getL2VersionAndUpdatePrompt } from "./checkL2Version";
 
-export function activate(context: vscode.ExtensionContext) {
+const MIN_VERSION_TO_CHECK = "1.5.1";
+
+export async function activate(context: vscode.ExtensionContext) {
   console.log('>>> Congratulations, your extension "Lama2" is now active!');
 
   // Level1 command pallette
@@ -36,9 +39,16 @@ export function activate(context: vscode.ExtensionContext) {
   console.log(">>> generateCodeSnippetDisposable is now active!");
 
   // Automatically check L2 version on extension activation
-  checkL2Version();
+  let suggestEnvVariables: any;
+  let l2Version = await getL2VersionAndUpdatePrompt(MIN_VERSION_TO_CHECK);
+  if (l2Version === null || l2Version === undefined || semver.lt(l2Version, MIN_VERSION_TO_CHECK)) {
+    getDotENVS();
+    suggestEnvVariables = suggestENVSFromDotEnv();
+  } else {
+    suggestEnvVariables = suggestENVs();
+  }
 
-  let suggestEnvVariables = suggestENVs();
+
   context.subscriptions.push(
     suggestEnvVariables,
     vscode.commands.registerCommand("envoptions", () => {
