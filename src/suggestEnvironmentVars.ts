@@ -30,6 +30,7 @@ export function getEnvsFromEnvCommand(): {} {
     return {};
   }
 }
+
 function createSuggestion(
   env: string,
   envVal: string,
@@ -38,10 +39,9 @@ function createSuggestion(
 ) {
   let item = new vscode.CompletionItem(
     env,
-    vscode.CompletionItemKind.Text
+    vscode.CompletionItemKind.Variable
   );
-  item.detail = envVal;
-  item.documentation = `src: ${envSrc}`;
+  item.detail = `${envVal} (src: ${envSrc})`;
   item.range = new vscode.Range(position, position);
   item.command = {
     title: "",

@@ -48,7 +48,6 @@ export function activate(context: vscode.ExtensionContext) {
     suggestEnvVariables = suggestENVs();
   }
 
-
   context.subscriptions.push(
     suggestEnvVariables,
     vscode.commands.registerCommand("envoptions", () => {
