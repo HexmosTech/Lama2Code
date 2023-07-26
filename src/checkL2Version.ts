@@ -12,7 +12,6 @@ export function getL2VersionAndUpdatePrompt(minVersionToCheck: string) {
     // Use the semver library to validate and normalize the version string
     const normalizedVersion = semver.valid(l2Version);
     if (normalizedVersion) {
-
       if (semver.lt(l2Version, minVersionToCheck)) {
         showUpdateWarning(minVersionToCheck);
       }
@@ -22,19 +21,35 @@ export function getL2VersionAndUpdatePrompt(minVersionToCheck: string) {
     }
   } catch (e: any) {
     console.log("Problem while checking for version -> ", e);
+    showDownloadBinaryError();
   }
 }
 
 function showUpdateWarning(minVersionToCheck: string) {
   const updateAction: vscode.MessageItem = { title: "Update" };
+  const warningMessage = `Your version of Lama2 is outdated. Please update to version ${minVersionToCheck} or above for the best experience.\n\nUpdate: ${UPDATE_MSG}`;
+
   vscode.window
-    .showWarningMessage(
-      `Your Lama2 version is outdated. \nPlease update to version ${minVersionToCheck} or above for the best experience.\nUpdate: ${UPDATE_MSG}`,
-      updateAction
-    )
+    .showWarningMessage(warningMessage, updateAction)
     .then((selectedAction) => {
       if (selectedAction === updateAction) {
         runL2UpdateCommand();
+      }
+    });
+}
+
+function showDownloadBinaryError() {
+  const download: vscode.MessageItem = { title: "Download" };
+  const errorMessage = `Your version of Lama2 is outdated. Some functionalities may not work correctly. Please download the latest version of Lama2 for the best experience.\n\nUpdate: ${UPDATE_MSG}`;
+
+  vscode.window
+    .showErrorMessage(
+      errorMessage, download
+    )
+    .then((selectedAction) => {
+      if (selectedAction === download) {
+        // Go to the URL when "Download" is clicked
+        vscode.env.openExternal(vscode.Uri.parse("https://github.com/HexmosTech/Lama2#installationupdate"));
       }
     });
 }
