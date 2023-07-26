@@ -5,6 +5,7 @@ let fs = require('fs')
 var path = require('path');
 var json2html = require('json2html')
 import splitLama2Output from './parseOut'
+import { getShowLama2Term } from './utils';
 
 class ExecuteCurrentFile {
     LAMA2_TERM_NAME = "AutoLama2"
@@ -18,32 +19,6 @@ class ExecuteCurrentFile {
 
     constructor(ctx: vscode.ExtensionContext) {
         this.context = ctx
-    }
-
-
-    getActiveTerminals() {
-        return vscode.window.terminals;
-    }
-
-    findTerminalsByName(name: string) {
-        let terminals = this.getActiveTerminals()
-        let found = terminals.find(element => element.name == name)
-        return found
-    }
-
-    findOrCreateTerminal(name: string) {
-        let terminal = this.findTerminalsByName(name)
-        if (terminal == null) {
-            return vscode.window.createTerminal(name)
-        } else {
-            return terminal
-        }
-    }
-
-    getShowLam2Term(name: string) {
-        let terminal = this.findOrCreateTerminal(name)
-        terminal.show()
-        return terminal
     }
 
     generateRandomName(length: any) {
@@ -247,7 +222,7 @@ class ExecuteCurrentFile {
     }
 
     execFile() {
-        let terminal = this.getShowLam2Term(this.LAMA2_TERM_NAME)
+        let terminal = getShowLama2Term(this.LAMA2_TERM_NAME)
         let { cmd, rflag, rfile } = this.getLama2Command()
         this.outPath = rfile
         this.flagPath = rflag

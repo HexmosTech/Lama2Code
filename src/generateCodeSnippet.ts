@@ -3,36 +3,12 @@ import ChokiExtension from "./watchFile";
 let fs = require("fs");
 import { window } from "vscode";
 import LanguagesData from "./languages";
+import { getShowLama2Term } from "./utils";
 
 class GenerateCodeSnippet {
   LAMA2_TERM_NAME = "AutoLama2";
   outPath: string = "";
   flagPath: string = "";
-
-  getActiveTerminals() {
-    return vscode.window.terminals;
-  }
-
-  findTerminalsByName(name: string) {
-    let terminals = this.getActiveTerminals();
-    let found = terminals.find((element) => element.name == name);
-    return found;
-  }
-
-  findOrCreateTerminal(name: string) {
-    let terminal = this.findTerminalsByName(name);
-    if (terminal == null) {
-      return vscode.window.createTerminal(name);
-    } else {
-      return terminal;
-    }
-  }
-
-  getShowLam2Term(name: string) {
-    let terminal = this.findOrCreateTerminal(name);
-    terminal.show();
-    return terminal;
-  }
 
   generateRandomName(length: any) {
     const characters =
@@ -102,7 +78,7 @@ class GenerateCodeSnippet {
   }
 
   execFile(lang: string, cli: string) {
-    let terminal = this.getShowLam2Term(this.LAMA2_TERM_NAME);
+    let terminal = getShowLama2Term(this.LAMA2_TERM_NAME);
     let { cmd, rflag, rfile } = this.getLama2Command(lang, cli);
     this.outPath = rfile;
     this.flagPath = rflag;
