@@ -87,7 +87,6 @@ class GenerateCodeSnippet {
   }
 }
 
-
 function isDefault(defaultClient: string, client: string) {
   if (defaultClient == client) {
     return "(Default)";
@@ -152,25 +151,25 @@ export function genCodeSnip() {
           // Level3 command pallette
           const selection:
             | {
-              label: string;
-              language: string;
-              client: string;
-            }
+                label: string;
+                language: string;
+                client: string;
+              }
             | undefined = await vscode.window.showQuickPick(
-              clientKeys
-                .sort((a, b) =>
-                  a === defaultClient ? -1 : b === defaultClient ? 1 : 0
-                )
-                .map((client) => ({
-                  label: `${language ?? ""}: ${client} ${isDefault(
-                    defaultClient,
-                    client
-                  )}`,
-                  language: language ?? "",
-                  client: client,
-                })),
-              { placeHolder: "Select a client" }
-            );
+            clientKeys
+              .sort((a, b) =>
+                a === defaultClient ? -1 : b === defaultClient ? 1 : 0
+              )
+              .map((client) => ({
+                label: `${language ?? ""}: ${client} ${isDefault(
+                  defaultClient,
+                  client
+                )}`,
+                language: language ?? "",
+                client: client,
+              })),
+            { placeHolder: "Select a client" }
+          );
 
           if (selection) {
             generateCodeSnippet.execFile(selection.language, selection.client);
@@ -181,4 +180,3 @@ export function genCodeSnip() {
   );
   return generateCodeSnippetDisposable;
 }
-

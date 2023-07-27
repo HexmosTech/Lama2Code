@@ -8,7 +8,7 @@ const UPDATE_MSG = "Support for environment variables.";
 
 export function getL2VersionAndUpdatePrompt(minVersionToCheck: string) {
   try {
-    const l2Version = execSync("l2 --version", { encoding: 'utf-8' }).trim();
+    const l2Version = execSync("l2 --version", { encoding: "utf-8" }).trim();
     // Use the semver library to validate and normalize the version string
     const normalizedVersion = semver.valid(l2Version);
     if (normalizedVersion) {
@@ -43,13 +43,15 @@ function showDownloadBinaryError() {
   const errorMessage = `Your version of Lama2 is outdated. Some functionalities may not work correctly. Please download the latest version of Lama2 for the best experience.\n\nUpdate: ${UPDATE_MSG}`;
 
   vscode.window
-    .showErrorMessage(
-      errorMessage, download
-    )
+    .showErrorMessage(errorMessage, download)
     .then((selectedAction) => {
       if (selectedAction === download) {
         // Go to the URL when "Download" is clicked
-        vscode.env.openExternal(vscode.Uri.parse("https://github.com/HexmosTech/Lama2#installationupdate"));
+        vscode.env.openExternal(
+          vscode.Uri.parse(
+            "https://github.com/HexmosTech/Lama2#installationupdate"
+          )
+        );
       }
     });
 }
