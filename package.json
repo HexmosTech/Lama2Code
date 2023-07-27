@@ -34,7 +34,8 @@
     "onCommand:lama2.PrettifyCurrentFile",
     "onCommand:lama2.GetRemoteURL",
     "onCommand:lama2.Lama2Examples",
-    "onLanguage:http"
+    "onLanguage:http",
+    "onLanguage:lama2"
   ],
   "main": "./out/extension.js",
   "contributes": {
