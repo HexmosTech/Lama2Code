@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import { execSync } from "child_process";
-import * as path from 'path';
-import * as fs from 'fs';
+import * as path from "path";
+import * as fs from "fs";
 import triggers from "./triggers";
 
 let envVars = [] as string[];
@@ -19,9 +19,9 @@ export function getEnvsFromEnvCommand(): {} {
   }
 
   try {
-    // Execute the command and read the stdout for JSON of all the env's 
+    // Execute the command and read the stdout for JSON of all the env's
 
-    // const commandOutput = execSync(`./build/l2 --env ${l2FilePath}`, { cwd: "/home/lovestaco/repos/Lama2", }).toString(); // For local debugging 
+    // const commandOutput = execSync(`./build/l2 --env ${l2FilePath}`, { cwd: "/home/lovestaco/repos/Lama2", }).toString(); // For local debugging
     const commandOutput = execSync(`l2 --env ${l2FilePath}`).toString();
     const envMap = JSON.parse(commandOutput);
     return envMap;
@@ -37,10 +37,7 @@ function createSuggestion(
   envSrc: string,
   position: vscode.Position
 ) {
-  let item = new vscode.CompletionItem(
-    env,
-    vscode.CompletionItemKind.Variable
-  );
+  let item = new vscode.CompletionItem(env, vscode.CompletionItemKind.Variable);
   item.detail = `${envVal} (src: ${envSrc})`;
   item.range = new vscode.Range(position, position);
   item.command = {
