@@ -7,7 +7,7 @@ import triggers from "./triggers";
 let envVars = [] as string[];
 let cursorPosition = 0;
 
-export function getEnvsFromEnvCommand(): {} {
+export function getEnvsFromEnvCommand(typedEnvArg: string): {} {
   const editor = vscode.window.activeTextEditor;
   if (!editor) {
     return {};
@@ -21,8 +21,8 @@ export function getEnvsFromEnvCommand(): {} {
   try {
     // Execute the command and read the stdout for JSON of all the env's 
 
-    // const commandOutput = execSync(`./build/l2 --env ${l2FilePath}`, { cwd: "/home/lovestaco/repos/Lama2", }).toString(); // For local debugging 
-    const commandOutput = execSync(`l2 --env ${l2FilePath}`).toString();
+    // const commandOutput = execSync(`./build/l2 --env=${typedText} ${l2FilePath}`, { cwd: "/home/lovestaco/repos/Lama2", }).toString(); // For local debugging
+    const commandOutput = execSync(`l2 --env=${typedEnvArg} ${l2FilePath}`).toString();
     const envMap = JSON.parse(commandOutput);
     return envMap;
   } catch (error) {
@@ -64,8 +64,11 @@ export function suggestENVs() {
         const triggerPostfix = currentLine
           .substring(position.character)
           .includes("}");
-
-        const envVarsObj = getEnvsFromEnvCommand() as Record<
+        const typedEnvArg = currentLine.substring(
+          currentLine.lastIndexOf("${") + 2,
+          position.character
+        );
+        const envVarsObj = getEnvsFromEnvCommand(typedEnvArg) as Record<
           string,
           { src: string; val: string }
         >; // Explicitly cast to the correct type
