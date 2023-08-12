@@ -3,7 +3,12 @@ import * as semver from "semver";
 
 import { genCodeSnip } from "./generateCodeSnippet";
 import { getRemoteUrl } from "./getRemoteUrl";
-import { getDotENVS, replaceTextAfterEnvSelected, suggestENVSFromDotEnv, suggestENVs } from "./suggestEnvironmentVars";
+import {
+  getDotENVS,
+  replaceTextAfterEnvSelected,
+  suggestENVSFromDotEnv,
+  suggestENVs,
+} from "./suggestEnvironmentVars";
 import { genLama2Examples } from "./genLama2Examples";
 import { execCurL2File } from "./executeCurrentFile";
 import { prettifyL2File } from "./prettifyL2File";
@@ -41,7 +46,11 @@ export function activate(context: vscode.ExtensionContext) {
   // Automatically check L2 version on extension activation
   let suggestEnvVariables: any;
   let l2Version = getL2VersionAndUpdatePrompt(MIN_VERSION_TO_CHECK);
-  if (l2Version === null || l2Version === undefined || semver.lt(l2Version, MIN_VERSION_TO_CHECK)) {
+  if (
+    l2Version === null ||
+    l2Version === undefined ||
+    semver.lt(l2Version, MIN_VERSION_TO_CHECK)
+  ) {
     getDotENVS();
     suggestEnvVariables = suggestENVSFromDotEnv();
   } else {
@@ -58,4 +67,4 @@ export function activate(context: vscode.ExtensionContext) {
 }
 
 // this method is called when your extension is deactivated
-export function deactivate() { }
+export function deactivate() {}
