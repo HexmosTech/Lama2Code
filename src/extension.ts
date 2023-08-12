@@ -9,7 +9,7 @@ import { execCurL2File } from "./executeCurrentFile";
 import { prettifyL2File } from "./prettifyL2File";
 import { getL2VersionAndUpdatePrompt } from "./checkL2Version";
 
-const MIN_VERSION_TO_CHECK = "1.5.1";
+const MIN_VERSION_TO_CHECK = "1.5.2";
 
 export function activate(context: vscode.ExtensionContext) {
   console.log('>>> Congratulations, your extension "Lama2" is now active!');
