@@ -59,33 +59,42 @@ export function suggestENVs() {
       // eslint-disable-next-line no-unused-vars
       provideCompletionItems(document, position, token, context) {
         const currentLine = document.lineAt(position.line).text;
-        const triggerPrefix = currentLine
-          .substring(0, position.character)
-          .includes("${");
-        const triggerPostfix = currentLine
-          .substring(position.character)
-          .includes("}");
-        const typedEnvArg = currentLine.substring(
-          currentLine.lastIndexOf("${") + 2,
-          position.character
-        );
-        const envVarsObj = getEnvsFromEnvCommand(typedEnvArg) as Record<
-          string,
-          { src: string; val: string }
-        >; // Explicitly cast to the correct type
-        const envVars = new Map(Object.entries(envVarsObj));
+        const cursorIndex = position.character; // Get the cursor position
 
-        const suggestionsArray = Array.from(envVars.entries()).map(
-          ([env, meta]) => createSuggestion(env, meta.val, meta.src, position)
-        );
+        // Find the opening brace nearest to the cursor position
+        const openingBraceIndex = currentLine.lastIndexOf("${", cursorIndex);
 
-        if (triggerPrefix && !triggerPostfix) {
-          return suggestionsArray;
-        } else if (triggerPrefix) {
-          return suggestionsArray;
-        } else {
-          return [];
+        // Find the closing brace nearest to the cursor position
+        const closingBraceIndex = currentLine.indexOf("}", cursorIndex);
+
+        if (openingBraceIndex >= 0 && closingBraceIndex > openingBraceIndex) {
+          const typedEnvArg = currentLine.substring(openingBraceIndex + 2, cursorIndex);
+          const envVarsObj = getEnvsFromEnvCommand(typedEnvArg) as Record<
+            string,
+            { src: string; val: string }
+          >;
+          const envVars = new Map(Object.entries(envVarsObj));
+
+          const suggestionsArray = Array.from(envVars.entries()).map(
+            ([env, meta]) => createSuggestion(env, meta.val, meta.src, position)
+          );
+
+          const triggerPrefix = currentLine
+            .substring(0, position.character)
+            .includes("${");
+          const triggerPostfix = currentLine
+            .substring(position.character)
+            .includes("}");
+
+          if (triggerPrefix && !triggerPostfix) {
+            return suggestionsArray;
+          } else if (triggerPrefix) {
+            return suggestionsArray;
+          } else {
+            return [];
+          }
         }
+        return []; // No suggestions if not within an environment variable placeholder
       },
       ...triggers, // triggers for activating the suggestions
       resolveCompletionItem(
@@ -102,17 +111,15 @@ export function suggestENVs() {
     }
   );
 }
-
 export function replaceTextAfterEnvSelected(env: string) {
   const editor = vscode.window.activeTextEditor;
   if (editor) {
     let position = editor.selection.active;
     let lineText = editor.document.lineAt(position.line).text;
-    let linePosition = editor.document.lineAt(position.line).range.start
-      .character;
+    let cursorIndex = position.character;
 
-    let openingBraceIndex = lineText.lastIndexOf("${", linePosition);
-    let closingBraceIndex = lineText.indexOf("}", openingBraceIndex);
+    let openingBraceIndex = lineText.lastIndexOf("${", cursorIndex);
+    let closingBraceIndex = lineText.indexOf("}", cursorIndex);
     if (openingBraceIndex >= 0 && closingBraceIndex > openingBraceIndex) {
       let edit = new vscode.WorkspaceEdit();
       let range = new vscode.Range(
@@ -126,7 +133,6 @@ export function replaceTextAfterEnvSelected(env: string) {
     }
   }
 }
-
 // Old functionalities to fetch variables and show by reading the l2.env
 function getEnvFromL2DotEnv(): string[] {
   const editor = vscode.window.activeTextEditor;
