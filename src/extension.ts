@@ -59,12 +59,12 @@ export function activate(context: vscode.ExtensionContext) {
 
   context.subscriptions.push(
     suggestEnvVariables,
-    vscode.commands.registerCommand("envoptions", () => {
+    vscode.commands.registerCommand("envoptions", (env: string) => {
       // This method is activated when the user selects a suggested env variable.
-      replaceTextAfterEnvSelected();
+      replaceTextAfterEnvSelected(env);
     })
   );
 }
 
 // this method is called when your extension is deactivated
-export function deactivate() {}
+export function deactivate() { }

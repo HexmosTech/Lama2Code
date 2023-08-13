@@ -21,8 +21,8 @@ export function getEnvsFromEnvCommand(typedEnvArg: string): {} {
   try {
     // Execute the command and read the stdout for JSON of all the env's
 
-    // const commandOutput = execSync(`./build/l2 --env=${typedText} ${l2FilePath}`, { cwd: "/home/lovestaco/repos/Lama2", }).toString(); // For local debugging
-    const commandOutput = execSync(`l2 --env=${typedEnvArg} ${l2FilePath}`).toString();
+    const commandOutput = execSync(`./build/l2 --env=${typedEnvArg} ${l2FilePath}`, { cwd: "/home/lovestaco/repos/Lama2", }).toString(); // For local debugging
+    // const commandOutput = execSync(`l2 --env=${typedEnvArg} ${l2FilePath}`).toString();
     const envMap = JSON.parse(commandOutput);
     return envMap;
   } catch (error) {
@@ -99,25 +99,24 @@ export function suggestENVs() {
   );
 }
 
-export function replaceTextAfterEnvSelected() {
+export function replaceTextAfterEnvSelected(env: string) {
   const editor = vscode.window.activeTextEditor;
   if (editor) {
     let position = editor.selection.active;
     let lineText = editor.document.lineAt(position.line).text;
-    let linePosition = editor.document.lineAt(position.line).range.start
-      .character;
-    let openingBraceIndex = lineText.indexOf("{", linePosition);
-    if (openingBraceIndex >= 0 && cursorPosition > openingBraceIndex) {
-      let newText = lineText.substring(0, openingBraceIndex + 1);
-      newText += lineText.substring(cursorPosition);
+    let linePosition = editor.document.lineAt(position.line).range.start.character;
+
+    let openingBraceIndex = lineText.lastIndexOf("${", linePosition);
+    let closingBraceIndex = lineText.indexOf("}", openingBraceIndex);
+    if (openingBraceIndex >= 0 && closingBraceIndex > openingBraceIndex) {
       let edit = new vscode.WorkspaceEdit();
       let range = new vscode.Range(
         position.line,
-        0,
+        openingBraceIndex + 2,
         position.line,
-        lineText.length
+        closingBraceIndex
       );
-      edit.replace(editor.document.uri, range, newText);
+      edit.replace(editor.document.uri, range, env);
       vscode.workspace.applyEdit(edit);
     }
   }
