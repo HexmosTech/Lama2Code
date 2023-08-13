@@ -22,11 +22,11 @@ export function getEnvsFromEnvCommand(typedEnvArg: string): {} {
   try {
     // Execute the command and read the stdout for JSON of all the env's
 
-    const commandOutput = execSync(
-      `./build/l2 --env=${typedEnvArg} ${l2FilePath}`,
-      { cwd: "/home/lovestaco/repos/Lama2" }
-    ).toString(); // For local debugging
-    // const commandOutput = execSync(`l2 --env=${typedEnvArg} ${l2FilePath}`).toString();
+    // const commandOutput = execSync(
+    //   `./build/l2 --env=${typedEnvArg} ${l2FilePath}`,
+    //   { cwd: "/home/lovestaco/repos/Lama2" }
+    // ).toString(); // For local debugging
+    const commandOutput = execSync(`l2 --env=${typedEnvArg} ${l2FilePath}`).toString();
     const envMap = JSON.parse(commandOutput);
     return envMap;
   } catch (error) {
@@ -111,7 +111,8 @@ export function suggestENVs() {
     }
   );
 }
-export function replaceTextAfterEnvSelected(env: string) {
+
+export function replaceTextAfterEnvSelected(selectedEnv: string) {
   const editor = vscode.window.activeTextEditor;
   if (editor) {
     let position = editor.selection.active;
@@ -128,7 +129,7 @@ export function replaceTextAfterEnvSelected(env: string) {
         position.line,
         closingBraceIndex
       );
-      edit.replace(editor.document.uri, range, env);
+      edit.replace(editor.document.uri, range, selectedEnv);
       vscode.workspace.applyEdit(edit);
     }
   }
