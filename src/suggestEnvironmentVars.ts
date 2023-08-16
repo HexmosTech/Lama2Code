@@ -52,55 +52,48 @@ function createSuggestion(
   return item;
 }
 
+function isCursorInsidePlaceholder(currentLine: string, cursorIndex: number): [boolean, number, number] {
+  const openingBraceIndex = currentLine.lastIndexOf("${", cursorIndex);
+  const closingBraceIndex = currentLine.indexOf("}", cursorIndex);
+
+  const isInside = (openingBraceIndex >= 0 && closingBraceIndex > openingBraceIndex);
+  return [isInside, openingBraceIndex, closingBraceIndex];
+}
+
+
+function createSuggestionsArray(envVarsObj: Record<string, { src: string; val: string }>, position: vscode.Position): vscode.CompletionItem[] {
+  const envVars = new Map(Object.entries(envVarsObj));
+  return Array.from(envVars.entries()).map(([env, meta]) => createSuggestion(env, meta.val, meta.src, position));
+}
+
 export function suggestENVs() {
   return vscode.languages.registerCompletionItemProvider(
     { language: "lama2", scheme: "file" },
     {
-      // eslint-disable-next-line no-unused-vars
-      provideCompletionItems(document, position, token, context) {
+      provideCompletionItems(document, position) {
         const currentLine = document.lineAt(position.line).text;
-        const cursorIndex = position.character; // Get the cursor position
+        const cursorIndex = position.character;
 
-        // Find the opening brace nearest to the cursor position
-        const openingBraceIndex = currentLine.lastIndexOf("${", cursorIndex);
+        const [isInsidePlaceholder, openingBraceIndex, closingBraceIndex] = isCursorInsidePlaceholder(currentLine, cursorIndex);
 
-        // Find the closing brace nearest to the cursor position
-        const closingBraceIndex = currentLine.indexOf("}", cursorIndex);
-
-        if (openingBraceIndex >= 0 && closingBraceIndex > openingBraceIndex) {
+        if (isInsidePlaceholder) {
           const typedEnvArg = currentLine.substring(openingBraceIndex + 2, cursorIndex);
-          const envVarsObj = getEnvsFromEnvCommand(typedEnvArg) as Record<
-            string,
-            { src: string; val: string }
-          >;
-          const envVars = new Map(Object.entries(envVarsObj));
+          const envVarsObj = getEnvsFromEnvCommand(typedEnvArg);
+          const suggestionsArray = createSuggestionsArray(envVarsObj, position);
 
-          const suggestionsArray = Array.from(envVars.entries()).map(
-            ([env, meta]) => createSuggestion(env, meta.val, meta.src, position)
-          );
-
-          const triggerPrefix = currentLine
-            .substring(0, position.character)
-            .includes("${");
-          const triggerPostfix = currentLine
-            .substring(position.character)
-            .includes("}");
+          const triggerPrefix = currentLine.substring(0, position.character).includes("${");
+          const triggerPostfix = currentLine.substring(position.character).includes("}");
 
           if (triggerPrefix && !triggerPostfix) {
             return suggestionsArray;
           } else if (triggerPrefix) {
             return suggestionsArray;
-          } else {
-            return [];
           }
         }
-        return []; // No suggestions if not within an environment variable placeholder
+        return [];
       },
-      ...triggers, // triggers for activating the suggestions
-      resolveCompletionItem(
-        item: vscode.CompletionItem,
-        token: vscode.CancellationToken
-      ) {
+      ...triggers,
+      resolveCompletionItem(item: vscode.CompletionItem) {
         const editor = vscode.window.activeTextEditor;
         if (editor) {
           const position = editor.selection.active;
@@ -111,6 +104,7 @@ export function suggestENVs() {
     }
   );
 }
+
 
 export function replaceTextAfterEnvSelected(selectedEnv: string) {
   const editor = vscode.window.activeTextEditor;
