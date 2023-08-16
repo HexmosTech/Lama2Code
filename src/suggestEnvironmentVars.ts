@@ -22,11 +22,11 @@ export function getEnvsFromEnvCommand(typedEnvArg: string): {} {
   try {
     // Execute the command and read the stdout for JSON of all the env's
 
-    // const commandOutput = execSync(
-    //   `./build/l2 --env=${typedEnvArg} ${l2FilePath}`,
-    //   { cwd: "/home/lovestaco/repos/Lama2" }
-    // ).toString(); // For local debugging
-    const commandOutput = execSync(`l2 --env=${typedEnvArg} ${l2FilePath}`).toString();
+    const commandOutput = execSync(
+      `./build/l2 --env=${typedEnvArg} ${l2FilePath}`,
+      { cwd: "/home/lovestaco/repos/Lama2" }
+    ).toString(); // For local debugging
+    // const commandOutput = execSync(`l2 --env=${typedEnvArg} ${l2FilePath}`).toString();
     const envMap = JSON.parse(commandOutput);
     return envMap;
   } catch (error) {
@@ -52,18 +52,40 @@ function createSuggestion(
   return item;
 }
 
-function isCursorInsidePlaceholder(currentLine: string, cursorIndex: number): [boolean, number, number] {
+function isCursorInsidePlaceholder(openingBraceIndex: number, closingBraceIndex: number): boolean {
+  const isInside = (openingBraceIndex >= 0 && closingBraceIndex > openingBraceIndex);
+  return isInside;
+}
+
+function getBraceIndicesOfCurLine(currentLine: string, cursorIndex: number): [number, number] {
   const openingBraceIndex = currentLine.lastIndexOf("${", cursorIndex);
   const closingBraceIndex = currentLine.indexOf("}", cursorIndex);
-
-  const isInside = (openingBraceIndex >= 0 && closingBraceIndex > openingBraceIndex);
-  return [isInside, openingBraceIndex, closingBraceIndex];
+  return [openingBraceIndex, closingBraceIndex];
 }
 
 
-function createSuggestionsArray(envVarsObj: Record<string, { src: string; val: string }>, position: vscode.Position): vscode.CompletionItem[] {
+function createSuggestionsArray(
+  envVarsObj: Record<string, { src: string; val: string }>,
+  position: vscode.Position
+): vscode.CompletionItem[] {
+
+  // Convert the object into a Map for easier iteration
   const envVars = new Map(Object.entries(envVarsObj));
-  return Array.from(envVars.entries()).map(([env, meta]) => createSuggestion(env, meta.val, meta.src, position));
+
+  // Map each entry in the Map to a completion suggestion
+  const suggestionsArray = Array.from(envVars.entries()).map(([env, meta]) => {
+    const suggestion = createSuggestion(env, meta.val, meta.src, position);
+    return suggestion;
+  });
+
+  return suggestionsArray;
+}
+
+
+function getTriggerPrefixAndPostfix(currentLine: string, cursorPosition: number): [boolean, boolean] {
+  const triggerPrefix = currentLine.substring(0, cursorPosition).includes("${");
+  const triggerPostfix = currentLine.substring(cursorPosition).includes("}");
+  return [triggerPrefix, triggerPostfix];
 }
 
 export function suggestENVs() {
@@ -74,15 +96,14 @@ export function suggestENVs() {
         const currentLine = document.lineAt(position.line).text;
         const cursorIndex = position.character;
 
-        const [isInsidePlaceholder, openingBraceIndex, closingBraceIndex] = isCursorInsidePlaceholder(currentLine, cursorIndex);
+        const [openingBraceIndex, closingBraceIndex] = getBraceIndicesOfCurLine(currentLine, cursorIndex);
+        const isInsidePlaceholder = isCursorInsidePlaceholder(openingBraceIndex, closingBraceIndex)
 
         if (isInsidePlaceholder) {
           const typedEnvArg = currentLine.substring(openingBraceIndex + 2, cursorIndex);
           const envVarsObj = getEnvsFromEnvCommand(typedEnvArg);
           const suggestionsArray = createSuggestionsArray(envVarsObj, position);
-
-          const triggerPrefix = currentLine.substring(0, position.character).includes("${");
-          const triggerPostfix = currentLine.substring(position.character).includes("}");
+          const [triggerPrefix, triggerPostfix] = getTriggerPrefixAndPostfix(currentLine, cursorIndex);
 
           if (triggerPrefix && !triggerPostfix) {
             return suggestionsArray;
@@ -113,9 +134,10 @@ export function replaceTextAfterEnvSelected(selectedEnv: string) {
     let lineText = editor.document.lineAt(position.line).text;
     let cursorIndex = position.character;
 
-    let openingBraceIndex = lineText.lastIndexOf("${", cursorIndex);
-    let closingBraceIndex = lineText.indexOf("}", cursorIndex);
-    if (openingBraceIndex >= 0 && closingBraceIndex > openingBraceIndex) {
+    let [openingBraceIndex, closingBraceIndex] = getBraceIndicesOfCurLine(lineText, cursorIndex);
+    let isInsidePlaceholder = isCursorInsidePlaceholder(openingBraceIndex, closingBraceIndex)
+
+    if (isInsidePlaceholder) {
       let edit = new vscode.WorkspaceEdit();
       let range = new vscode.Range(
         position.line,
