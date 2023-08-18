@@ -41,7 +41,6 @@ function createSuggestion(
   envSrc: string,
   position: vscode.Position
 ) {
-  console.log("Creating suggestion for env:", env);
   let item = new vscode.CompletionItem(env, vscode.CompletionItemKind.Variable);
   item.detail = `${envVal} (src: ${envSrc})`;
   item.range = new vscode.Range(position, position);
