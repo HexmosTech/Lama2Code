@@ -11,7 +11,7 @@ type EnvVarObject = {
   [key: string]: {
     src: string;
     val: string;
-  }
+  };
 };
 
 export function getEnvsFromEnvCommand(typedEnvArg: string): EnvVarObject {
@@ -33,7 +33,9 @@ export function getEnvsFromEnvCommand(typedEnvArg: string): EnvVarObject {
     //   `./build/l2 --env=${typedEnvArg} ${l2FilePath}`,
     //   { cwd: "/home/lovestaco/repos/Lama2" }
     // ).toString(); // For local debugging
-    const commandOutput = execSync(`l2 --env=${typedEnvArg} ${l2FilePath}`).toString();
+    const commandOutput = execSync(
+      `l2 --env=${typedEnvArg} ${l2FilePath}`
+    ).toString();
     const envMap = JSON.parse(commandOutput);
     return envMap;
   } catch (error) {
@@ -51,7 +53,7 @@ function createSuggestion(
   let item = new vscode.CompletionItem(env, vscode.CompletionItemKind.Variable);
   item.detail = `${envVal} (src: ${envSrc})`;
   item.range = new vscode.Range(position, position);
-  item.filterText = '*'
+  item.filterText = "*";
   item.command = {
     title: "",
     command: "envoptions",
@@ -60,21 +62,29 @@ function createSuggestion(
   return item;
 }
 
-function isCursorInsidePlaceholder(openingBraceIndex: number, closingBraceIndex: number): boolean {
+function isCursorInsidePlaceholder(
+  openingBraceIndex: number,
+  closingBraceIndex: number
+): boolean {
   console.log("Checking if cursor is inside placeholder...");
-  const isInside = (openingBraceIndex >= 0 && closingBraceIndex > openingBraceIndex);
+  const isInside =
+    openingBraceIndex >= 0 && closingBraceIndex > openingBraceIndex;
   return isInside;
 }
 
-function getBraceIndicesOfCurLine(currentLine: string, cursorIndex: number): [number, number] {
+function getBraceIndicesOfCurLine(
+  currentLine: string,
+  cursorIndex: number
+): [number, number] {
   console.log("Getting brace indices for current line...");
   const openingBraceIndex = currentLine.lastIndexOf("${", cursorIndex);
   const closingBraceIndex = currentLine.indexOf("}", cursorIndex);
   return [openingBraceIndex, closingBraceIndex];
 }
 
-
-function createSuggestionsArray(envVarsObj: EnvVarObject): vscode.CompletionItem[] {
+function createSuggestionsArray(
+  envVarsObj: EnvVarObject
+): vscode.CompletionItem[] {
   return Object.entries(envVarsObj).map(([env, data]) => {
     const completionItem = new vscode.CompletionItem(env);
     completionItem.documentation = new vscode.MarkdownString()
@@ -85,38 +95,47 @@ function createSuggestionsArray(envVarsObj: EnvVarObject): vscode.CompletionItem
   });
 }
 
-
-
 export let lama2ProvideCompletionItems = {
-  provideCompletionItems(document: vscode.TextDocument, position: vscode.Position) {
-
+  provideCompletionItems(
+    document: vscode.TextDocument,
+    position: vscode.Position
+  ) {
     const currentLine = document.lineAt(position.line).text;
     const cursorIndex = position.character;
 
-    const [openingBraceIndex, closingBraceIndex] = getBraceIndicesOfCurLine(currentLine, cursorIndex);
+    const [openingBraceIndex, closingBraceIndex] = getBraceIndicesOfCurLine(
+      currentLine,
+      cursorIndex
+    );
 
-    const typedEnvArg = currentLine.substring(openingBraceIndex + 2, cursorIndex);
+    const typedEnvArg = currentLine.substring(
+      openingBraceIndex + 2,
+      cursorIndex
+    );
 
     const envVarsObj: EnvVarObject = getEnvsFromEnvCommand(typedEnvArg);
-    const isInsidePlaceholder = isCursorInsidePlaceholder(openingBraceIndex, closingBraceIndex)
+    const isInsidePlaceholder = isCursorInsidePlaceholder(
+      openingBraceIndex,
+      closingBraceIndex
+    );
 
     if (isInsidePlaceholder) {
-      const completions: vscode.CompletionItem[] = createSuggestionsArray(envVarsObj);
+      const completions: vscode.CompletionItem[] =
+        createSuggestionsArray(envVarsObj);
 
       return completions;
     }
     return [];
-  }
-}
+  },
+};
 
 export function lama2RegisterCompletionItemProvider() {
   console.log("Setting up ENVs suggestion...");
   return vscode.languages.registerCompletionItemProvider(
-    '*',
-    lama2ProvideCompletionItems,
-  )
+    "*",
+    lama2ProvideCompletionItems
+  );
 }
-
 
 export function replaceTextAfterEnvSelected(selectedEnv: string) {
   console.log("Replacing text after env selected...");
@@ -126,8 +145,14 @@ export function replaceTextAfterEnvSelected(selectedEnv: string) {
     let lineText = editor.document.lineAt(position.line).text;
     let cursorIndex = position.character;
 
-    let [openingBraceIndex, closingBraceIndex] = getBraceIndicesOfCurLine(lineText, cursorIndex);
-    let isInsidePlaceholder = isCursorInsidePlaceholder(openingBraceIndex, closingBraceIndex)
+    let [openingBraceIndex, closingBraceIndex] = getBraceIndicesOfCurLine(
+      lineText,
+      cursorIndex
+    );
+    let isInsidePlaceholder = isCursorInsidePlaceholder(
+      openingBraceIndex,
+      closingBraceIndex
+    );
 
     if (isInsidePlaceholder) {
       let edit = new vscode.WorkspaceEdit();
