@@ -44,6 +44,7 @@ function createSuggestion(
   let item = new vscode.CompletionItem(env, vscode.CompletionItemKind.Variable);
   item.detail = `${envVal} (src: ${envSrc})`;
   item.range = new vscode.Range(position, position);
+  item.filterText = '*'
   item.command = {
     title: "",
     command: "envoptions",
@@ -91,10 +92,34 @@ function getTriggerPrefixAndPostfix(currentLine: string, cursorPosition: number)
   return [triggerPrefix, triggerPostfix];
 }
 
+export let lama2CompletionProvider = {
+  provideCompletionItems(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken, context: vscode.CompletionContext) {
+    const completions: vscode.CompletionItem[] = [];
+
+    const currentLine = document.lineAt(position.line).text;
+    const cursorIndex = position.character;
+
+    const [openingBraceIndex, closingBraceIndex] = getBraceIndicesOfCurLine(currentLine, cursorIndex);
+    const isInsidePlaceholder = isCursorInsidePlaceholder(openingBraceIndex, closingBraceIndex)
+    const typedEnvArg = currentLine.substring(openingBraceIndex + 2, cursorIndex);
+
+    const envVarsObj = getEnvsFromEnvCommand(typedEnvArg);
+    console.log(envVarsObj)
+    // Iterate over the keys of envVarsObj and create CompletionItem for each
+    for (const key in envVarsObj) {
+      if (envVarsObj.hasOwnProperty(key)) {
+        completions.push(new vscode.CompletionItem(key));
+      }
+    }
+
+    return completions;
+  }
+}
+
 export function suggestENVs() {
   console.log("Setting up ENVs suggestion...");
   return vscode.languages.registerCompletionItemProvider(
-    { language: "lama2", scheme: "file" },
+    "*",
     {
       provideCompletionItems(document, position) {
         const currentLine = document.lineAt(position.line).text;
@@ -114,18 +139,9 @@ export function suggestENVs() {
           }
         }
         return [];
-      },
-      ...triggers,
-      resolveCompletionItem(item: vscode.CompletionItem) {
-        const editor = vscode.window.activeTextEditor;
-        if (editor) {
-          const position = editor.selection.active;
-          cursorPosition = position.character;
-        }
-        return item;
-      },
+      }
     }
-  );
+  )
 }
 
 
