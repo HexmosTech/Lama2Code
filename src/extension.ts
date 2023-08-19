@@ -7,7 +7,7 @@ import {
   getDotENVS,
   replaceTextAfterEnvSelected,
   suggestENVSFromDotEnv,
-  suggestENVs,
+  lama2RegisterCompletionItemProvider,
 } from "./suggestEnvironmentVars";
 import { genLama2Examples } from "./genLama2Examples";
 import { execCurL2File } from "./executeCurrentFile";
@@ -54,11 +54,12 @@ export function activate(context: vscode.ExtensionContext) {
     getDotENVS();
     suggestEnvVariables = suggestENVSFromDotEnv();
   } else {
-    suggestEnvVariables = suggestENVs();
+    suggestEnvVariables = lama2RegisterCompletionItemProvider();
   }
 
   context.subscriptions.push(
     suggestEnvVariables,
+    // below part is not required for l2 version > 1.5.1
     vscode.commands.registerCommand("envoptions", (selectedEnv: string) => {
       // This method is activated when the user selects a suggested env variable.
       replaceTextAfterEnvSelected(selectedEnv);

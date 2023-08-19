@@ -29,6 +29,16 @@
   "categories": [
     "Other"
   ],
+  "contributes": {
+    "completionItemProvider": [
+      {
+        "language": "lama2",
+        "triggerCharacters": [
+          "$"
+        ]
+      }
+    ]
+  },
   "activationEvents": [
     "onCommand:lama2.ExecuteCurrentFile",
     "onCommand:lama2.PrettifyCurrentFile",

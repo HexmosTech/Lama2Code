@@ -7,7 +7,14 @@ import triggers from "./triggers";
 let envVars = [] as string[];
 let cursorPosition = 0;
 
-export function getEnvsFromEnvCommand(typedEnvArg: string): {} {
+type EnvVarObject = {
+  [key: string]: {
+    src: string;
+    val: string;
+  }
+};
+
+export function getEnvsFromEnvCommand(typedEnvArg: string): EnvVarObject {
   console.log("Entering getEnvsFromEnvCommand with arg:", typedEnvArg);
   const editor = vscode.window.activeTextEditor;
   if (!editor) {
@@ -67,80 +74,46 @@ function getBraceIndicesOfCurLine(currentLine: string, cursorIndex: number): [nu
 }
 
 
-function createSuggestionsArray(
-  envVarsObj: Record<string, { src: string; val: string }>,
-  position: vscode.Position
-): vscode.CompletionItem[] {
-  console.log("Creating suggestions array...");
-  // Convert the object into a Map for easier iteration
-  const envVars = new Map(Object.entries(envVarsObj));
-
-  // Map each entry in the Map to a completion suggestion
-  const suggestionsArray = Array.from(envVars.entries()).map(([env, meta]) => {
-    const suggestion = createSuggestion(env, meta.val, meta.src, position);
-    return suggestion;
+function createSuggestionsArray(envVarsObj: EnvVarObject): vscode.CompletionItem[] {
+  return Object.entries(envVarsObj).map(([env, data]) => {
+    const completionItem = new vscode.CompletionItem(env);
+    completionItem.documentation = new vscode.MarkdownString()
+      .appendText(`Source: ${data.src}\n`)
+      .appendText(`Value: ${data.val}`);
+    completionItem.detail = "Press Ctrl + Space for docs.";
+    return completionItem;
   });
-
-  return suggestionsArray;
 }
 
 
-function getTriggerPrefixAndPostfix(currentLine: string, cursorPosition: number): [boolean, boolean] {
-  console.log("Getting trigger prefix and postfix...");
-  const triggerPrefix = currentLine.substring(0, cursorPosition).includes("${");
-  const triggerPostfix = currentLine.substring(cursorPosition).includes("}");
-  return [triggerPrefix, triggerPostfix];
-}
 
-export let lama2CompletionProvider = {
-  provideCompletionItems(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken, context: vscode.CompletionContext) {
-    const completions: vscode.CompletionItem[] = [];
+export let lama2ProvideCompletionItems = {
+  provideCompletionItems(document: vscode.TextDocument, position: vscode.Position) {
 
     const currentLine = document.lineAt(position.line).text;
     const cursorIndex = position.character;
 
     const [openingBraceIndex, closingBraceIndex] = getBraceIndicesOfCurLine(currentLine, cursorIndex);
-    const isInsidePlaceholder = isCursorInsidePlaceholder(openingBraceIndex, closingBraceIndex)
+
     const typedEnvArg = currentLine.substring(openingBraceIndex + 2, cursorIndex);
 
-    const envVarsObj = getEnvsFromEnvCommand(typedEnvArg);
-    console.log(envVarsObj)
-    // Iterate over the keys of envVarsObj and create CompletionItem for each
-    for (const key in envVarsObj) {
-      if (envVarsObj.hasOwnProperty(key)) {
-        completions.push(new vscode.CompletionItem(key));
-      }
-    }
+    const envVarsObj: EnvVarObject = getEnvsFromEnvCommand(typedEnvArg);
+    const isInsidePlaceholder = isCursorInsidePlaceholder(openingBraceIndex, closingBraceIndex)
 
-    return completions;
+    if (isInsidePlaceholder) {
+      const completions: vscode.CompletionItem[] = createSuggestionsArray(envVarsObj);
+
+      return completions;
+    }
+    return [];
   }
 }
 
-export function suggestENVs() {
+export function lama2RegisterCompletionItemProvider() {
   console.log("Setting up ENVs suggestion...");
   return vscode.languages.registerCompletionItemProvider(
-    "*",
-    {
-      provideCompletionItems(document, position) {
-        const currentLine = document.lineAt(position.line).text;
-        const cursorIndex = position.character;
-        console.log("Current Line:", currentLine, "Cursor Index:", cursorIndex);
-
-        const [openingBraceIndex, closingBraceIndex] = getBraceIndicesOfCurLine(currentLine, cursorIndex);
-        const isInsidePlaceholder = isCursorInsidePlaceholder(openingBraceIndex, closingBraceIndex)
-
-        if (isInsidePlaceholder) {
-          const typedEnvArg = currentLine.substring(openingBraceIndex + 2, cursorIndex);
-          const envVarsObj = getEnvsFromEnvCommand(typedEnvArg);
-          const suggestionsArray = createSuggestionsArray(envVarsObj, position);
-          const [triggerPrefix, triggerPostfix] = getTriggerPrefixAndPostfix(currentLine, cursorIndex);
-          if (triggerPrefix) {
-            return suggestionsArray;
-          }
-        }
-        return [];
-      }
-    }
+    '*',
+    lama2ProvideCompletionItems,
   )
 }
 
