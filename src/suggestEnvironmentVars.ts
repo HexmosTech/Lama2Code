@@ -7,7 +7,15 @@ import triggers from "./triggers";
 let envVars = [] as string[];
 let cursorPosition = 0;
 
-export function getEnvsFromEnvCommand(): {} {
+type EnvVarObject = {
+  [key: string]: {
+    src: string;
+    val: string;
+  };
+};
+
+export function getEnvsFromEnvCommand(typedEnvArg: string): EnvVarObject {
+  console.log("Entering getEnvsFromEnvCommand with arg:", typedEnvArg);
   const editor = vscode.window.activeTextEditor;
   if (!editor) {
     return {};
@@ -21,8 +29,13 @@ export function getEnvsFromEnvCommand(): {} {
   try {
     // Execute the command and read the stdout for JSON of all the env's
 
-    // const commandOutput = execSync(`./build/l2 --env ${l2FilePath}`, { cwd: "/home/lovestaco/repos/Lama2", }).toString(); // For local debugging
-    const commandOutput = execSync(`l2 --env ${l2FilePath}`).toString();
+    // const commandOutput = execSync(
+    //   `./build/l2 --env=${typedEnvArg} ${l2FilePath}`,
+    //   { cwd: "/home/lovestaco/repos/Lama2" }
+    // ).toString(); // For local debugging
+    const commandOutput = execSync(
+      `l2 --env=${typedEnvArg} ${l2FilePath}`
+    ).toString();
     const envMap = JSON.parse(commandOutput);
     return envMap;
   } catch (error) {
@@ -48,73 +61,112 @@ function createSuggestion(
   return item;
 }
 
-export function suggestENVs() {
-  return vscode.languages.registerCompletionItemProvider(
-    { language: "lama2", scheme: "file" },
-    {
-      // eslint-disable-next-line no-unused-vars
-      provideCompletionItems(document, position, token, context) {
-        const currentLine = document.lineAt(position.line).text;
-        const triggerPrefix = currentLine
-          .substring(0, position.character)
-          .includes("${");
-        const triggerPostfix = currentLine
-          .substring(position.character)
-          .includes("}");
+function isCursorInsidePlaceholder(
+  openingBraceIndex: number,
+  closingBraceIndex: number
+): boolean {
+  console.log("Checking if cursor is inside placeholder...");
+  const isInside =
+    openingBraceIndex >= 0 && closingBraceIndex > openingBraceIndex;
+  return isInside;
+}
 
-        const envVarsObj = getEnvsFromEnvCommand() as Record<
-          string,
-          { src: string; val: string }
-        >; // Explicitly cast to the correct type
-        const envVars = new Map(Object.entries(envVarsObj));
+function getBraceIndicesOfCurLine(
+  currentLine: string,
+  cursorIndex: number
+): [number, number] {
+  console.log("Getting brace indices for current line...");
+  const openingBraceIndex = currentLine.lastIndexOf("${", cursorIndex);
+  const closingBraceIndex = currentLine.indexOf("}", cursorIndex);
+  return [openingBraceIndex, closingBraceIndex];
+}
 
-        const suggestionsArray = Array.from(envVars.entries()).map(
-          ([env, meta]) => createSuggestion(env, meta.val, meta.src, position)
-        );
+function createSuggestionsArray(
+  envVarsObj: EnvVarObject
+): vscode.CompletionItem[] {
+  return Object.entries(envVarsObj).map(([env, data]) => {
+    const completionItem = new vscode.CompletionItem(env);
+    completionItem.documentation = new vscode.MarkdownString()
+      .appendText(`Source: ${data.src}\n`)
+      .appendText(`Value: ${data.val}`);
+    completionItem.detail = "Press Ctrl + Space for docs.";
+    return completionItem;
+  });
+}
 
-        if (triggerPrefix && !triggerPostfix) {
-          return suggestionsArray;
-        } else if (triggerPrefix) {
-          return suggestionsArray;
-        } else {
-          return [];
-        }
-      },
-      ...triggers, // triggers for activating the suggestions
-      resolveCompletionItem(
-        item: vscode.CompletionItem,
-        token: vscode.CancellationToken
-      ) {
-        const editor = vscode.window.activeTextEditor;
-        if (editor) {
-          const position = editor.selection.active;
-          cursorPosition = position.character;
-        }
-        return item;
-      },
+export let lama2ProvideCompletionItems = {
+  provideCompletionItems(
+    document: vscode.TextDocument,
+    position: vscode.Position
+  ) {
+    const currentLine = document.lineAt(position.line).text;
+    const cursorIndex = position.character;
+
+    const [openingBraceIndex, closingBraceIndex] = getBraceIndicesOfCurLine(
+      currentLine,
+      cursorIndex
+    );
+
+    const typedEnvArg = currentLine.substring(
+      openingBraceIndex + 2,
+      cursorIndex
+    );
+
+    const envVarsObj: EnvVarObject = getEnvsFromEnvCommand(typedEnvArg);
+    const isInsidePlaceholder = isCursorInsidePlaceholder(
+      openingBraceIndex,
+      closingBraceIndex
+    );
+
+    if (isInsidePlaceholder) {
+      const completions: vscode.CompletionItem[] =
+        createSuggestionsArray(envVarsObj);
+
+      return completions;
     }
+    return [];
+  },
+};
+
+export function lama2RegisterCompletionItemProvider() {
+  console.log("Setting up ENVs suggestion...");
+  // Registering a completion provider.
+  return vscode.languages.registerCompletionItemProvider(
+    // The '*' indicates that this provider will suggest completions for any type of file (language).
+    // But since we are activating the extension only on language lama2,
+    // The intellisense will add all the words to the completion item list.
+    // Which is helpful as we have JS blocks support in the file.
+    "*",
+    lama2ProvideCompletionItems
   );
 }
 
-export function replaceTextAfterEnvSelected() {
+export function replaceTextAfterEnvSelected(selectedEnv: string) {
+  console.log("Replacing text after env selected...");
   const editor = vscode.window.activeTextEditor;
   if (editor) {
     let position = editor.selection.active;
     let lineText = editor.document.lineAt(position.line).text;
-    let linePosition = editor.document.lineAt(position.line).range.start
-      .character;
-    let openingBraceIndex = lineText.indexOf("{", linePosition);
-    if (openingBraceIndex >= 0 && cursorPosition > openingBraceIndex) {
-      let newText = lineText.substring(0, openingBraceIndex + 1);
-      newText += lineText.substring(cursorPosition);
+    let cursorIndex = position.character;
+
+    let [openingBraceIndex, closingBraceIndex] = getBraceIndicesOfCurLine(
+      lineText,
+      cursorIndex
+    );
+    let isInsidePlaceholder = isCursorInsidePlaceholder(
+      openingBraceIndex,
+      closingBraceIndex
+    );
+
+    if (isInsidePlaceholder) {
       let edit = new vscode.WorkspaceEdit();
       let range = new vscode.Range(
         position.line,
-        0,
+        openingBraceIndex + 2,
         position.line,
-        lineText.length
+        closingBraceIndex
       );
-      edit.replace(editor.document.uri, range, newText);
+      edit.replace(editor.document.uri, range, selectedEnv);
       vscode.workspace.applyEdit(edit);
     }
   }

@@ -6,6 +6,8 @@ var path = require("path");
 var json2html = require("json2html");
 import splitLama2Output from "./parseOut";
 import { getShowLama2Term } from "./utils";
+import { MIN_VERSION_TO_CHECK } from "./extension";
+import { getL2VersionAndUpdatePrompt } from "./checkL2Version";
 
 class ExecuteCurrentFile {
   LAMA2_TERM_NAME = "AutoLama2";
@@ -237,6 +239,7 @@ class ExecuteCurrentFile {
   }
 
   execFile() {
+    getL2VersionAndUpdatePrompt(MIN_VERSION_TO_CHECK);
     let terminal = getShowLama2Term(this.LAMA2_TERM_NAME);
     let { cmd, rflag, rfile } = this.getLama2Command();
     this.outPath = rfile;
