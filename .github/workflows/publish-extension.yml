@@ -2,8 +2,8 @@ name: Publish VS Code Extension
 
 on:
   push:
-    branches:
-      - main # Change this to your default branch if it's not 'main'
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+"
 
 jobs:
   build-and-publish:
@@ -20,13 +20,15 @@ jobs:
       - name: Install Dependencies with Yarn
         run: yarn install
 
+      - name: Update Version in package.json
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/}
+          npm version $VERSION --no-git-tag-version
+
       - name: Package Extension
         run: npx vsce package
 
       - name: Publish Extension
-        # npx vsce publish takes either major or minor arg.
-        # passing minor would make a minor  release
-        # passing major would make a major release
-        run: npx vsce publish major
+        run: npx vsce publish
         env:
-          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+          VSCE_PAT: ${{ secrets.VSC_PERSONAL_ACCESS_TOKEN }}
