@@ -239,6 +239,7 @@ class ExecuteCurrentFile {
   }
 
   execFile() {
+    getL2VersionAndUpdatePrompt(MIN_VERSION_TO_CHECK);
     let terminal = getShowLama2Term(this.LAMA2_TERM_NAME);
     let { cmd, rflag, rfile } = this.getLama2Command();
     this.outPath = rfile;
@@ -249,7 +250,6 @@ class ExecuteCurrentFile {
 }
 
 export function execCurL2File(context: vscode.ExtensionContext) {
-  getL2VersionAndUpdatePrompt(MIN_VERSION_TO_CHECK);
   let executeCurrentFile = new ExecuteCurrentFile(context);
   return vscode.commands.registerCommand("lama2.ExecuteCurrentFile", () =>
     executeCurrentFile.execFile()
