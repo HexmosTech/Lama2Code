@@ -53,7 +53,6 @@ function createSuggestion(
   let item = new vscode.CompletionItem(env, vscode.CompletionItemKind.Variable);
   item.detail = `${envVal} (src: ${envSrc})`;
   item.range = new vscode.Range(position, position);
-  item.filterText = "*";
   item.command = {
     title: "",
     command: "envoptions",
@@ -131,7 +130,12 @@ export let lama2ProvideCompletionItems = {
 
 export function lama2RegisterCompletionItemProvider() {
   console.log("Setting up ENVs suggestion...");
+  // Registering a completion provider.
   return vscode.languages.registerCompletionItemProvider(
+    // The '*' indicates that this provider will suggest completions for any type of file (language).
+    // But since we are activating the extension only on language lama2,
+    // The intellisense will add all the words to the completion item list.
+    // Which is helpful as we have JS blocks support in the file.
     "*",
     lama2ProvideCompletionItems
   );
