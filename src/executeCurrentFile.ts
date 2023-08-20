@@ -6,6 +6,8 @@ var path = require("path");
 var json2html = require("json2html");
 import splitLama2Output from "./parseOut";
 import { getShowLama2Term } from "./utils";
+import { MIN_VERSION_TO_CHECK } from "./extension";
+import { getL2VersionAndUpdatePrompt } from "./checkL2Version";
 
 class ExecuteCurrentFile {
   LAMA2_TERM_NAME = "AutoLama2";
@@ -247,6 +249,7 @@ class ExecuteCurrentFile {
 }
 
 export function execCurL2File(context: vscode.ExtensionContext) {
+  getL2VersionAndUpdatePrompt(MIN_VERSION_TO_CHECK);
   let executeCurrentFile = new ExecuteCurrentFile(context);
   return vscode.commands.registerCommand("lama2.ExecuteCurrentFile", () =>
     executeCurrentFile.execFile()
