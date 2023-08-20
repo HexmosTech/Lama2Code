@@ -17,8 +17,8 @@ jobs:
         with:
           node-version: "14"
 
-      - name: Install Dependencies
-        run: npm install
+      - name: Install Dependencies with Yarn
+        run: yarn install
 
       - name: Package Extension
         run: npx vsce package
