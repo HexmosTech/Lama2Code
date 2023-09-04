@@ -1,8 +1,9 @@
 import * as vscode from "vscode";
-import { execSync } from "child_process";
+import { ChildProcess, execSync } from "child_process";
 import * as path from "path";
 import * as fs from "fs";
 import triggers from "./triggers";
+import { IJSONRPCResponse, ILSPRequestDetails, logToChannel, sendRequestToLSPReadResponse } from "./lsp/utils";
 
 let envVars = [] as string[];
 let cursorPosition = 0;
@@ -13,36 +14,6 @@ type EnvVarObject = {
     val: string;
   };
 };
-
-export function getEnvsFromEnvCommand(typedEnvArg: string): EnvVarObject {
-  console.log("Entering getEnvsFromEnvCommand with arg:", typedEnvArg);
-  const editor = vscode.window.activeTextEditor;
-  if (!editor) {
-    return {};
-  }
-
-  const l2FilePath = editor.document.fileName;
-  if (!l2FilePath.endsWith(".l2")) {
-    return {};
-  }
-
-  try {
-    // Execute the command and read the stdout for JSON of all the env's
-
-    // const commandOutput = execSync(
-    //   `./build/l2 --env=${typedEnvArg} ${l2FilePath}`,
-    //   { cwd: "/home/lovestaco/repos/Lama2" }
-    // ).toString(); // For local debugging
-    const commandOutput = execSync(
-      `l2 --env=${typedEnvArg} ${l2FilePath}`
-    ).toString();
-    const envMap = JSON.parse(commandOutput);
-    return envMap;
-  } catch (error) {
-    console.error("Error executing the command:", error);
-    return {};
-  }
-}
 
 function createSuggestion(
   env: string,
@@ -94,41 +65,58 @@ function createSuggestionsArray(
   });
 }
 
-export let lama2ProvideCompletionItems = {
-  provideCompletionItems(
-    document: vscode.TextDocument,
-    position: vscode.Position
-  ) {
-    const currentLine = document.lineAt(position.line).text;
-    const cursorIndex = position.character;
+export function lama2ProvideCompletionItems(langServer: ChildProcess, requestId: number) {
+  return {
+    async provideCompletionItems(
+      document: vscode.TextDocument,
+      position: vscode.Position
+    ): Promise<vscode.CompletionItem[]> {
+      requestId += 1
+      const currentLine = document.lineAt(position.line).text;
+      const cursorIndex = position.character;
 
-    const [openingBraceIndex, closingBraceIndex] = getBraceIndicesOfCurLine(
-      currentLine,
-      cursorIndex
-    );
+      const [openingBraceIndex, closingBraceIndex] = getBraceIndicesOfCurLine(
+        currentLine,
+        cursorIndex
+      );
 
-    const typedEnvArg = currentLine.substring(
-      openingBraceIndex + 2,
-      cursorIndex
-    );
 
-    const envVarsObj: EnvVarObject = getEnvsFromEnvCommand(typedEnvArg);
-    const isInsidePlaceholder = isCursorInsidePlaceholder(
-      openingBraceIndex,
-      closingBraceIndex
-    );
+      const typedEnvArg = currentLine.substring(
+        openingBraceIndex + 2,
+        cursorIndex
+      );
+      let envsReq: ILSPRequestDetails = {
+        process: langServer,
+        id: requestId,
+        method: 'suggest/environmentVariables',
+        params: {
+          textDocument: {
+            uri: document.uri.toString()
+          },
+          position: position,
+          relevantSearchString: typedEnvArg
+        }
+      }
+      const response: IJSONRPCResponse = await sendRequestToLSPReadResponse(envsReq);
+      logToChannel({ msg: 'Received envs from server', dataObject: response.result });
+      const envVarsObj: EnvVarObject = response.result
+      const isInsidePlaceholder = isCursorInsidePlaceholder(
+        openingBraceIndex,
+        closingBraceIndex
+      );
 
-    if (isInsidePlaceholder) {
-      const completions: vscode.CompletionItem[] =
-        createSuggestionsArray(envVarsObj);
+      if (isInsidePlaceholder) {
+        const completions: vscode.CompletionItem[] =
+          createSuggestionsArray(envVarsObj);
 
-      return completions;
-    }
-    return [];
-  },
-};
+        return completions;
+      }
+      return [];
+    },
+  };
+}
 
-export function lama2RegisterCompletionItemProvider() {
+export function lama2RegisterCompletionItemProvider(langServer: ChildProcess, requestId: number) {
   console.log("Setting up ENVs suggestion...");
   // Registering a completion provider.
   return vscode.languages.registerCompletionItemProvider(
@@ -137,7 +125,7 @@ export function lama2RegisterCompletionItemProvider() {
     // The intellisense will add all the words to the completion item list.
     // Which is helpful as we have JS blocks support in the file.
     "*",
-    lama2ProvideCompletionItems
+    lama2ProvideCompletionItems(langServer, requestId)
   );
 }
 
