@@ -83,8 +83,21 @@ function initlizeServer() {
     process: langServer,
     id: requestId,
     method: 'initialize',
-    params: {}
-  };
+    params: {
+      processId: process.pid,
+      rootUri: vscode.workspace.workspaceFolders ? vscode.workspace.workspaceFolders[0].uri.toString() : undefined,
+      workspace: {
+        workspaceFolders: {
+          supported: false,
+          changeNotifications: false
+        }
+      },
+      clientInfo: {
+        name: vscode.env.appName,
+        version: vscode.version
+      }
+    },
+  }
   sendRequestToLSPReadResponse(initLspReq);
 }
 
