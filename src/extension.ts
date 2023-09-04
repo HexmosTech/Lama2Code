@@ -1,62 +1,110 @@
 
-export const MIN_VERSION_TO_CHECK = "1.2.3";
 import * as vscode from 'vscode';
-import * as path from 'path';
+import * as semver from "semver";
+
+import { genCodeSnip } from './generateCodeSnippet';
+import { getRemoteUrl } from './getRemoteUrl';
+import { getDotENVS, lama2RegisterCompletionItemProvider, replaceTextAfterEnvSelected, suggestENVSFromDotEnv } from './suggestEnvironmentVars';
+import { genLama2Examples } from './genLama2Examples';
+import { execCurL2File } from './executeCurrentFile';
+import { prettifyL2File } from './prettifyL2File';
+import { getL2VersionAndUpdatePrompt } from './checkL2Version';
+
 import { ServerOptions, LanguageClient, LanguageClientOptions, TransportKind } from 'vscode-languageclient/lib/node/main';
 import * as child_process from 'child_process';
-import { log } from 'console';
+import { getServerExecutablePath, logToChannel, sendRequestToLSPReadResponse, IJSONRPCRequest, ILSPRequestDetails } from './lsp/utils';
 
-const LANGUAGE: string = "lama2";
+export const MIN_VERSION_TO_CHECK = "1.2.3";
+let requestId = 1
 
-console.log("LANGUAGE:", LANGUAGE); // log
-const serverProcess = child_process.spawn(getServerExecutablePath(), ['--lsp']);
-const outputChannel = vscode.window.createOutputChannel("Lama2 Language Server");
+const langServer = child_process.spawn(getServerExecutablePath(), ['--lsp']);
 
 export function activate(context: vscode.ExtensionContext) {
   const serverExecutablePath = getServerExecutablePath();
-  outputToChannel(`Server Executable Path: ${serverExecutablePath}`);
+  console.log("Server executable path: " + serverExecutablePath)
+  initlizeServer();
 
-  // Start the LSP server
-  // Handle messages from the server (responses and notifications)
-  serverProcess.stdout.on('data', (data) => {
-    console.log(`Received from server: ${data}`);
-    outputToChannel(`Received from server: ${data}`);
-    // You can further process or handle the data here.
-  });
+  console.log('>>> Congratulations, your extension "Lama2" is now active!');
 
-  log("client AFTER START -> ", serverProcess);
+  // Level1 command pallette
+  let executeCurrentFileDisposable = execCurL2File(context);
+  context.subscriptions.push(executeCurrentFileDisposable);
+  console.log(">>> executeCurrentFileDisposable is now active!");
+
+  // Level1 command pallette
+  let getremoteUrlFileDisposable = getRemoteUrl(context);
+  context.subscriptions.push(getremoteUrlFileDisposable);
+  console.log(">>> getremoteUrlFileDisposable is now active!");
+
+  // Level1 command pallette
+  let prettifyCurrentFileDisposable = prettifyL2File();
+  context.subscriptions.push(prettifyCurrentFileDisposable);
+  console.log(">>> prettifyCurrentFileDisposable is now active!");
+
+  // Level1 command pallette
+  let lama2Examples = genLama2Examples();
+  console.log(">>> lama2Examples is now active!");
+
+  // Level1 command pallette
+  let generateCodeSnippetDisposable = genCodeSnip();
+  context.subscriptions.push(generateCodeSnippetDisposable);
+  console.log(">>> generateCodeSnippetDisposable is now active!");
+  // Automatically check L2 version on extension activation
+  let suggestEnvVariables: any;
+  let l2Version = getL2VersionAndUpdatePrompt(MIN_VERSION_TO_CHECK);
+  if (
+    l2Version === null ||
+    l2Version === undefined ||
+    semver.lt(l2Version, MIN_VERSION_TO_CHECK)
+  ) {
+    // The L2 version, if less than v1.5.0, does not support the `l2 -e <filepath>` feature.
+    // Therefore, we use the extension to fetch variables from the l2.env file for suggestions.
+    getDotENVS();
+    suggestEnvVariables = suggestENVSFromDotEnv();
+  } else {
+    // L2 versions greater than or equal to v1.5.0 support the `l2 -e <filepath>` feature.
+    // Therefore, we fetch variables from both the l2.env and l2config.env files for suggestions using this command.
+    suggestEnvVariables = lama2RegisterCompletionItemProvider(langServer, requestId);
+  }
+
+  context.subscriptions.push(
+    suggestEnvVariables,
+    // The following part is unnecessary for L2 versions > 1.5.0
+    vscode.commands.registerCommand("envoptions", (selectedEnv: string) => {
+      // This method is triggered when a user selects a suggested environment variable.
+      replaceTextAfterEnvSelected(selectedEnv);
+    })
+  );
+
+}
+
+function initlizeServer() {
+  let initLspReq: ILSPRequestDetails = {
+    process: langServer,
+    id: requestId,
+    method: 'initialize',
+    params: {}
+  };
+  sendRequestToLSPReadResponse(initLspReq);
 }
 
 export function deactivate() {
-  outputToChannel("Extension deactivated");
-  console.log("Extension deactivated"); // log
-  sendRequestToServer({ "jsonrpc": "2.0", "id": 2, "method": "shutdown" });
-  sendRequestToServer({ "jsonrpc": "2.0", "method": "exit" });
-}
-
-function getServerExecutablePath(): string {
-  return path.join("/home/lovestaco/repos/Lama2Code/", './l2');
-}
-
-// Helper function to write to the output channel
-function outputToChannel(message: string) {
-  outputChannel.appendLine(message);
-}
-
-
-// Sending a request to the server
-function sendRequestToServer(request: object) {
-  const requestString = JSON.stringify(request);
-  outputToChannel(`Sending to server: ${requestString}`);
-  serverProcess.stdin.write(requestString + "\n");  // Note: Make sure each request ends with a newline character.
-}
-
-// For example, to initialize the server:
-sendRequestToServer({
-  "jsonrpc": "2.0",
-  "id": 1,
-  "method": "initialize",
-  "params": {
-    // Your initialization parameters here...
+  logToChannel({ msg: "Extension deactivated" });
+  requestId += 1
+  let shutdownReq: ILSPRequestDetails = {
+    process: langServer,
+    id: requestId,
+    method: 'shutdown',
   }
-});
+  sendRequestToLSPReadResponse(shutdownReq);
+  requestId += 1
+  let exitReq: ILSPRequestDetails = {
+    process: langServer,
+    id: requestId,
+    method: 'exit',
+  }
+  sendRequestToLSPReadResponse(exitReq);
+  logToChannel({ msg: "Extension deactivated" })
+}
+
+
