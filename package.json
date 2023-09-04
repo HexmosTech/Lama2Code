@@ -31,8 +31,6 @@
   ],
   "activationEvents": [
     "onCommand:lama2.ExecuteCurrentFile",
-    "onCommand:lama2.PrettifyCurrentFile",
-    "onCommand:lama2.GetRemoteURL",
     "onCommand:lama2.Lama2Examples",
     "onLanguage:http",
     "onLanguage:lama2"
@@ -40,6 +38,10 @@
   "main": "./out/extension.js",
   "contributes": {
     "languages": [
+      {
+        "id": "go",
+        "extensions": [".go"]
+    },
       {
         "id": "lama2",
         "extensions": [
@@ -63,24 +65,26 @@
       {
         "command": "lama2.ExecuteCurrentFile",
         "title": "Lama2: Execute Current File"
-      },
-      {
-        "command": "lama2.GenerateCodeSnippet",
-        "title": "Lama2: Generate Code Snippet"
-      },
-      {
-        "command": "lama2.PrettifyCurrentFile",
-        "title": "Lama2: Prettify Current File JSON"
-      },
-      {
-        "command": "lama2.GetRemoteURL",
-        "title": "Lama2: Get Remote Git URL"
-      },
+      }, 
       {
         "command": "lama2.Lama2Examples",
         "title": "Lama2: Request Examples"
       }
-    ]
+    ],
+    "languageserver": {
+      "lama2": {
+          "documentSelector": ["lama2"],
+          "command": "./src/l2 --lsp",
+          "diagnosticCollectionName": "lama2",
+          "capabilities": {
+              "textDocumentSync": 1,
+              "completionProvider": {
+                  "resolveProvider": true
+              },
+              "hoverProvider": true
+          }
+      }
+  }
   },
   "scripts": {
     "vscode:prepublish": "yarn run compile",
@@ -110,6 +114,8 @@
     "chokidar": "^3.5.3",
     "json2html": "^0.0.8",
     "semver": "^7.5.4",
-    "simple-git": "^3.17.0"
+    "simple-git": "^3.17.0",
+    "vscode-languageclient": "^8.1.0",
+    "vscode-languageserver": "^8.1.0"
   }
 }
