@@ -4,6 +4,7 @@ import * as path from "path";
 import * as fs from "fs";
 import triggers from "./triggers";
 import { IJSONRPCResponse, ILSPRequestDetails, logToChannel, sendRequestToLSPReadResponse } from "./lsp/utils";
+import { getEnvsFromLsp } from "./lsp/methods/lspSuggestEnvs";
 
 let envVars = [] as string[];
 let cursorPosition = 0;
@@ -65,13 +66,51 @@ function createSuggestionsArray(
   });
 }
 
+function isCursorInsideTemplateLiteral(lineText: string, cursorCharacter: number): boolean {
+  let insideTemplateLiteral = false;
+  let insideStringQuotes = false;
+
+  let lastQuoteIndex = lineText.lastIndexOf('"', cursorCharacter - 1);
+  let nextQuoteIndex = lineText.indexOf('"', cursorCharacter);
+
+  if (lastQuoteIndex !== -1 && nextQuoteIndex !== -1) {
+    insideStringQuotes = true;
+  }
+
+  for (let i = 0; i < cursorCharacter; i++) {
+    if (lineText[i] === '$' && lineText[i + 1] === '{' && insideStringQuotes) {
+      insideTemplateLiteral = true;
+    }
+
+    if (lineText[i] === '}') {
+      insideTemplateLiteral = false;
+    }
+  }
+  return insideTemplateLiteral;
+}
+
+export function triggerSuggestionInTemplateLiteral() {
+  return vscode.workspace.onDidChangeTextDocument((event) => {
+    const editor = vscode.window.activeTextEditor;
+    if (editor && event.document === editor.document) {
+      const cursorPosition = editor.selection.active;
+      const lineText = editor.document.lineAt(cursorPosition.line).text;
+
+      if (isCursorInsideTemplateLiteral(lineText, cursorPosition.character)) {
+        // Manually trigger suggestions
+        vscode.commands.executeCommand('editor.action.triggerSuggest');
+      }
+    }
+  });
+}
+
 export function lama2ProvideCompletionItems(langServer: ChildProcess, requestId: number) {
   return {
     async provideCompletionItems(
       document: vscode.TextDocument,
       position: vscode.Position
     ): Promise<vscode.CompletionItem[]> {
-      requestId += 1
+      requestId += 1;
       const currentLine = document.lineAt(position.line).text;
       const cursorIndex = position.character;
 
@@ -80,24 +119,12 @@ export function lama2ProvideCompletionItems(langServer: ChildProcess, requestId:
         cursorIndex
       );
 
-
       const typedEnvArg = currentLine.substring(
         openingBraceIndex + 2,
         cursorIndex
       );
-      let envsReq: ILSPRequestDetails = {
-        process: langServer,
-        id: requestId,
-        method: 'suggest/environmentVariables',
-        params: {
-          textDocument: {
-            uri: document.uri.toString()
-          },
-          position: position,
-          relevantSearchString: typedEnvArg
-        }
-      }
-      const response: IJSONRPCResponse = await sendRequestToLSPReadResponse(envsReq);
+
+      const response: IJSONRPCResponse = await getEnvsFromLsp(langServer, requestId, document, position, typedEnvArg);
       logToChannel({ msg: 'Received envs from server', dataObject: response.result });
       const envVarsObj: EnvVarObject = response.result
       const isInsidePlaceholder = isCursorInsidePlaceholder(
@@ -115,6 +142,8 @@ export function lama2ProvideCompletionItems(langServer: ChildProcess, requestId:
     },
   };
 }
+
+
 
 export function lama2RegisterCompletionItemProvider(langServer: ChildProcess, requestId: number) {
   console.log("Setting up ENVs suggestion...");
