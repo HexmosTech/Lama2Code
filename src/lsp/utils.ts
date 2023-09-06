@@ -1,10 +1,12 @@
-import * as fs from 'fs';
-import * as path from 'path';
-import * as vscode from 'vscode';
+import * as fs from "fs";
+import * as path from "path";
+import * as vscode from "vscode";
 import { ChildProcess } from "child_process";
 
 // Create an output channel for Lama2 Language Server
-const outputChannel = vscode.window.createOutputChannel("Lama2 Language Server");
+const outputChannel = vscode.window.createOutputChannel(
+  "Lama2 Language Server"
+);
 
 interface ILogOptions {
   msg: string;
@@ -20,9 +22,9 @@ export interface ILogType {
 
 // Log types and their corresponding attributes
 const LOG_TYPES: Record<string, ILogType> = {
-  error: { label: 'Error', color: 'red' },
-  info: { label: 'Info', color: 'blue' },
-  warning: { label: 'Warning', color: 'orange' }
+  error: { label: "Error", color: "red" },
+  info: { label: "Info", color: "blue" },
+  warning: { label: "Warning", color: "orange" },
 };
 
 export interface ILSPRequestDetails {
@@ -39,7 +41,11 @@ export interface IJSONRPCResponse {
   error?: any;
 }
 
-export type IJSONRPCMethod = "initialize" | "shutdown" | "exit" | "suggest/environmentVariables";
+export type IJSONRPCMethod =
+  | "initialize"
+  | "shutdown"
+  | "exit"
+  | "suggest/environmentVariables";
 
 export interface IJSONRPCRequest {
   jsonrpc: "2.0";
@@ -49,7 +55,9 @@ export interface IJSONRPCRequest {
 }
 
 // Function to send requests to the Language Server Protocol and read responses
-export function sendRequestToLSPReadResponse(requestDetails: ILSPRequestDetails): Promise<IJSONRPCResponse> {
+export function sendRequestToLSPReadResponse(
+  requestDetails: ILSPRequestDetails
+): Promise<IJSONRPCResponse> {
   return new Promise((resolve, reject) => {
     let { process, id, method, params } = requestDetails;
 
@@ -65,7 +73,7 @@ export function sendRequestToLSPReadResponse(requestDetails: ILSPRequestDetails)
       jsonrpc: "2.0",
       id,
       method,
-      params
+      params,
     };
 
     logToChannel({ msg: "Sending request: ", dataObject: request });
@@ -73,7 +81,7 @@ export function sendRequestToLSPReadResponse(requestDetails: ILSPRequestDetails)
     process.stdin.write(requestString + "\n");
 
     const chunks: any[] = [];
-    process.stdout.on('data', (data) => {
+    process.stdout.on("data", (data) => {
       chunks.push(data);
       const responseData = Buffer.concat(chunks).toString();
       try {
@@ -86,8 +94,11 @@ export function sendRequestToLSPReadResponse(requestDetails: ILSPRequestDetails)
       }
     });
 
-    process.stdout.on('end', () => {
-      logToChannel({ msg: "Received incomplete response from server", dataString: Buffer.concat(chunks).toString() });
+    process.stdout.on("end", () => {
+      logToChannel({
+        msg: "Received incomplete response from server",
+        dataString: Buffer.concat(chunks).toString(),
+      });
       reject(new Error("Received incomplete response from server"));
     });
   });
@@ -95,10 +106,12 @@ export function sendRequestToLSPReadResponse(requestDetails: ILSPRequestDetails)
 
 // Function to get the path for the server executable
 export function getServerExecutablePath(): string {
-  const executablePath = path.join("/home/lovestaco/repos/Lama2Code/", 'l2');
+  const executablePath = path.join("/home/lovestaco/repos/Lama2Code/", "l2");
 
   if (!fs.existsSync(executablePath)) {
-    throw new Error("The l2 server executable is not found in the specified path!");
+    throw new Error(
+      "The l2 server executable is not found in the specified path!"
+    );
   }
 
   return executablePath;

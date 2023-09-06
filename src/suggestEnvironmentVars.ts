@@ -3,7 +3,7 @@ import { ChildProcess, execSync } from "child_process";
 import * as path from "path";
 import * as fs from "fs";
 import triggers from "./triggers";
-import { IJSONRPCResponse, ILSPRequestDetails, logToChannel, sendRequestToLSPReadResponse } from "./lsp/utils";
+import { IJSONRPCResponse, logToChannel } from "./lsp/utils";
 import { getEnvsFromLsp } from "./lsp/methods/lspSuggestEnvs";
 
 let envVars = [] as string[];
@@ -66,7 +66,10 @@ function createSuggestionsArray(
   });
 }
 
-function isCursorInsideTemplateLiteral(lineText: string, cursorCharacter: number): boolean {
+function isCursorInsideTemplateLiteral(
+  lineText: string,
+  cursorCharacter: number
+): boolean {
   let insideTemplateLiteral = false;
   let insideStringQuotes = false;
 
@@ -78,11 +81,11 @@ function isCursorInsideTemplateLiteral(lineText: string, cursorCharacter: number
   }
 
   for (let i = 0; i < cursorCharacter; i++) {
-    if (lineText[i] === '$' && lineText[i + 1] === '{' && insideStringQuotes) {
+    if (lineText[i] === "$" && lineText[i + 1] === "{" && insideStringQuotes) {
       insideTemplateLiteral = true;
     }
 
-    if (lineText[i] === '}') {
+    if (lineText[i] === "}") {
       insideTemplateLiteral = false;
     }
   }
@@ -98,13 +101,16 @@ export function triggerSuggestionInTemplateLiteral() {
 
       if (isCursorInsideTemplateLiteral(lineText, cursorPosition.character)) {
         // Manually trigger suggestions
-        vscode.commands.executeCommand('editor.action.triggerSuggest');
+        vscode.commands.executeCommand("editor.action.triggerSuggest");
       }
     }
   });
 }
 
-export function lama2ProvideCompletionItems(langServer: ChildProcess, requestId: number) {
+export function lama2ProvideCompletionItems(
+  langServer: ChildProcess,
+  requestId: number
+) {
   return {
     async provideCompletionItems(
       document: vscode.TextDocument,
@@ -124,9 +130,18 @@ export function lama2ProvideCompletionItems(langServer: ChildProcess, requestId:
         cursorIndex
       );
 
-      const response: IJSONRPCResponse = await getEnvsFromLsp(langServer, requestId, document, position, typedEnvArg);
-      logToChannel({ msg: 'Received envs from server', dataObject: response.result });
-      const envVarsObj: EnvVarObject = response.result
+      const response: IJSONRPCResponse = await getEnvsFromLsp(
+        langServer,
+        requestId,
+        document,
+        position,
+        typedEnvArg
+      );
+      logToChannel({
+        msg: "Received envs from server",
+        dataObject: response.result,
+      });
+      const envVarsObj: EnvVarObject = response.result;
       const isInsidePlaceholder = isCursorInsidePlaceholder(
         openingBraceIndex,
         closingBraceIndex
@@ -143,9 +158,10 @@ export function lama2ProvideCompletionItems(langServer: ChildProcess, requestId:
   };
 }
 
-
-
-export function lama2RegisterCompletionItemProvider(langServer: ChildProcess, requestId: number) {
+export function lama2RegisterCompletionItemProvider(
+  langServer: ChildProcess,
+  requestId: number
+) {
   console.log("Setting up ENVs suggestion...");
   // Registering a completion provider.
   return vscode.languages.registerCompletionItemProvider(

@@ -1,30 +1,51 @@
-
-import * as vscode from 'vscode';
+import * as vscode from "vscode";
 import * as semver from "semver";
 
-import { genCodeSnip } from './generateCodeSnippet';
-import { getRemoteUrl } from './getRemoteUrl';
-import { getDotENVS, lama2RegisterCompletionItemProvider, replaceTextAfterEnvSelected, suggestENVSFromDotEnv, triggerSuggestionInTemplateLiteral } from './suggestEnvironmentVars';
-import { genLama2Examples } from './genLama2Examples';
-import { execCurL2File } from './executeCurrentFile';
-import { prettifyL2File } from './prettifyL2File';
-import { getL2VersionAndUpdatePrompt } from './checkL2Version';
+import { genCodeSnip } from "./generateCodeSnippet";
+import { getRemoteUrl } from "./getRemoteUrl";
+import {
+  getDotENVS,
+  lama2RegisterCompletionItemProvider,
+  replaceTextAfterEnvSelected,
+  suggestENVSFromDotEnv,
+  triggerSuggestionInTemplateLiteral,
+} from "./suggestEnvironmentVars";
+import { genLama2Examples } from "./genLama2Examples";
+import { execCurL2File } from "./executeCurrentFile";
+import { prettifyL2File } from "./prettifyL2File";
+import { getL2VersionAndUpdatePrompt } from "./checkL2Version";
 
-import { ServerOptions, LanguageClient, LanguageClientOptions, TransportKind } from 'vscode-languageclient/lib/node/main';
-import * as child_process from 'child_process';
-import { getServerExecutablePath, logToChannel, sendRequestToLSPReadResponse, IJSONRPCRequest, ILSPRequestDetails } from './lsp/utils';
+import {
+  ServerOptions,
+  LanguageClient,
+  LanguageClientOptions,
+  TransportKind,
+} from "vscode-languageclient/lib/node/main";
+import * as child_process from "child_process";
+import {
+  getServerExecutablePath,
+  logToChannel,
+  sendRequestToLSPReadResponse,
+  IJSONRPCRequest,
+  ILSPRequestDetails,
+} from "./lsp/utils";
+import {
+  exitLsp,
+  initlizeServer,
+  shutDownLsp,
+} from "./lsp/methods/lspLifecycles";
 
 export const MIN_VERSION_TO_CHECK = "1.2.3";
-let requestId = 1
+let requestId = 1;
 
-const langServer = child_process.spawn(getServerExecutablePath(), ['--lsp']);
+const langServer = child_process.spawn(getServerExecutablePath(), ["--lsp"]);
 
 export function activate(context: vscode.ExtensionContext) {
-  const serverExecutablePath = getServerExecutablePath();
-  console.log("Server executable path: " + serverExecutablePath)
-  initlizeServer();
-
   console.log('>>> Congratulations, your extension "Lama2" is now active!');
+
+  const serverExecutablePath = getServerExecutablePath();
+  console.log("Server executable path: " + serverExecutablePath);
+  initlizeServer(langServer, requestId);
 
   // Level1 command pallette
   let executeCurrentFileDisposable = execCurL2File(context);
@@ -59,9 +80,9 @@ export function activate(context: vscode.ExtensionContext) {
     semver.lt(l2Version, MIN_VERSION_TO_CHECK)
   ) {
     /**
-    * The L2 version, if less than v1.5.0, does not support the `l2 -e <filepath>` feature.
-    * Therefore, we use the extension to fetch variables from the l2.env file for suggestions.
-    */
+     * The L2 version, if less than v1.5.0, does not support the `l2 -e <filepath>` feature.
+     * Therefore, we use the extension to fetch variables from the l2.env file for suggestions.
+     */
     getDotENVS();
     suggestEnvVariables = suggestENVSFromDotEnv();
   } else {
@@ -69,7 +90,10 @@ export function activate(context: vscode.ExtensionContext) {
      * L2 versions greater than or equal to v1.5.0 support the `l2 -e <filepath>` feature.
      * Therefore, we fetch variables from both the l2.env and l2config.env files for suggestions using this command.
      */
-    suggestEnvVariables = lama2RegisterCompletionItemProvider(langServer, requestId);
+    suggestEnvVariables = lama2RegisterCompletionItemProvider(
+      langServer,
+      requestId
+    );
   }
 
   context.subscriptions.push(
@@ -86,55 +110,17 @@ export function activate(context: vscode.ExtensionContext) {
   /**
    * Listens for text changes in the active document and triggers suggestion
    * if the cursor is within a template literal inside string quotes.
-   * 
-   * This is needed because VS Code's native intellisense might not 
-   * automatically trigger suggestions within specific contexts like a 
+   *
+   * This is needed because VS Code's native intellisense might not
+   * automatically trigger suggestions within specific contexts like a
    * template literal inside string quotes.
    */
   const listener = triggerSuggestionInTemplateLiteral();
   context.subscriptions.push(listener);
 }
 
-function initlizeServer() {
-  let initLspReq: ILSPRequestDetails = {
-    process: langServer,
-    id: requestId,
-    method: 'initialize',
-    params: {
-      processId: process.pid,
-      rootUri: vscode.workspace.workspaceFolders ? vscode.workspace.workspaceFolders[0].uri.toString() : undefined,
-      workspace: {
-        workspaceFolders: {
-          supported: false,
-          changeNotifications: false
-        }
-      },
-      clientInfo: {
-        name: vscode.env.appName,
-        version: vscode.version
-      }
-    },
-  }
-  sendRequestToLSPReadResponse(initLspReq);
-}
-
 export function deactivate() {
+  shutDownLsp(langServer, requestId);
+  exitLsp(langServer, requestId);
   logToChannel({ msg: "Extension deactivated" });
-  requestId += 1
-  let shutdownReq: ILSPRequestDetails = {
-    process: langServer,
-    id: requestId,
-    method: 'shutdown',
-  }
-  sendRequestToLSPReadResponse(shutdownReq);
-  requestId += 1
-  let exitReq: ILSPRequestDetails = {
-    process: langServer,
-    id: requestId,
-    method: 'exit',
-  }
-  sendRequestToLSPReadResponse(exitReq);
-  logToChannel({ msg: "Extension deactivated" })
 }
-
-
