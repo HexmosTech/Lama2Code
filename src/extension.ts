@@ -15,19 +15,10 @@ import { execCurL2File } from "./executeCurrentFile";
 import { prettifyL2File } from "./prettifyL2File";
 import { getL2VersionAndUpdatePrompt } from "./checkL2Version";
 
-import {
-  ServerOptions,
-  LanguageClient,
-  LanguageClientOptions,
-  TransportKind,
-} from "vscode-languageclient/lib/node/main";
 import * as child_process from "child_process";
 import {
   getServerExecutablePath,
   logToChannel,
-  sendRequestToLSPReadResponse,
-  IJSONRPCRequest,
-  ILSPRequestDetails,
 } from "./lsp/utils";
 import {
   exitLsp,
