@@ -17,7 +17,6 @@ import { getL2VersionAndUpdatePrompt } from "./checkL2Version";
 
 import * as child_process from "child_process";
 import {
-  getServerExecutablePath,
   logToChannel,
 } from "./lsp/utils";
 import {
@@ -29,13 +28,11 @@ import {
 export const MIN_VERSION_TO_CHECK = "1.2.3";
 let requestId = 1;
 
-const langServer = child_process.spawn(getServerExecutablePath(), ["--lsp"]);
+const langServer = child_process.spawn("l2", ["--lsp"]);
 
 export function activate(context: vscode.ExtensionContext) {
   console.log('>>> Congratulations, your extension "Lama2" is now active!');
 
-  const serverExecutablePath = getServerExecutablePath();
-  console.log("Server executable path: " + serverExecutablePath);
   initlizeServer(langServer, requestId);
 
   // Level1 command pallette

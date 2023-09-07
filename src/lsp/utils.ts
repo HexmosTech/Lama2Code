@@ -104,19 +104,6 @@ export function sendRequestToLSPReadResponse(
   });
 }
 
-// Function to get the path for the server executable
-export function getServerExecutablePath(): string {
-  const executablePath = path.join("/home/lovestaco/repos/Lama2Code/", "l2");
-
-  if (!fs.existsSync(executablePath)) {
-    throw new Error(
-      "The l2 server executable is not found in the specified path!"
-    );
-  }
-
-  return executablePath;
-}
-
 // Helper function to log messages to the output channel
 export function logToChannel(options: ILogOptions) {
   const { msg: message, logType = "info", dataObject, dataString } = options;
