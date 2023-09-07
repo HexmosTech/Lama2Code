@@ -22,7 +22,7 @@ export async function getEnvsFromLsp(
         uri: document.uri.toString(),
       },
       position: position,
-      relevantSearchString: typedEnvArg,
+      searchQuery: typedEnvArg,
     },
   };
   const response: IJSONRPCResponse = await sendRequestToLSPReadResponse(

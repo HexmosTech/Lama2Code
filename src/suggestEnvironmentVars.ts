@@ -139,7 +139,7 @@ export function lama2ProvideCompletionItems(
       );
       logToChannel({
         msg: "Received envs from server",
-        dataObject: response.result,
+        dataObject: response,
       });
       const envVarsObj: EnvVarObject = response.result;
       const isInsidePlaceholder = isCursorInsidePlaceholder(
