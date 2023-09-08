@@ -3,7 +3,7 @@ import { ChildProcess, execSync } from "child_process";
 import * as path from "path";
 import * as fs from "fs";
 import triggers from "./triggers";
-import { IJSONRPCResponse, logToChannel } from "./lsp/utils";
+import { ErrorCodes, IJSONRPCResponse, logToChannel } from "./lsp/utils";
 import { getEnvsFromLsp } from "./lsp/methods/lspSuggestEnvs";
 
 let envVars = [] as string[];
@@ -141,6 +141,8 @@ export function lama2ProvideCompletionItems(
         msg: "Received envs from server",
         dataObject: response,
       });
+      // Check if there's an error in the response
+      handleErrorsForSuggestEnvs(response);
       const envVarsObj: EnvVarObject = response.result;
       const isInsidePlaceholder = isCursorInsidePlaceholder(
         openingBraceIndex,
@@ -156,6 +158,28 @@ export function lama2ProvideCompletionItems(
       return [];
     },
   };
+}
+
+function handleErrorsForSuggestEnvs(response: IJSONRPCResponse) {
+  if (response.error) {
+    switch (response.error.code) {
+      case ErrorCodes.ERR_INVALID_REQUEST:
+        vscode.window.showErrorMessage("Invalid JSON-RPC request: " + response.error.message);
+        break;
+      case ErrorCodes.ERR_UNSUPPORTED_FEATURE:
+        vscode.window.showErrorMessage(response.error.message, 'Visit GitHub').then(selected => {
+          if (selected === 'Visit GitHub') {
+            vscode.env.openExternal(vscode.Uri.parse('https://github.com/HexmosTech/Lama2'));
+          }
+        });
+        break;
+      case ErrorCodes.ERR_INVALID_AFTER_SHUTDOWN:
+        vscode.window.showErrorMessage("Invalid request after shutdown: " + response.error.message);
+        break;
+      default:
+        vscode.window.showErrorMessage("Unknown error: " + response.error.message);
+    }
+  }
 }
 
 export function lama2RegisterCompletionItemProvider(

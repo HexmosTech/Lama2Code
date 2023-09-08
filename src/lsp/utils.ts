@@ -3,6 +3,15 @@ import * as path from "path";
 import * as vscode from "vscode";
 import { ChildProcess } from "child_process";
 
+export const ErrorCodes = {
+  ERR_INVALID_AFTER_SHUTDOWN: -32000,
+  ERR_UNSUPPORTED_FEATURE: -32001,
+  ERR_INVALID_URI: -32002,
+  ERR_UNEXPECTED_URI_SCHEME: -32003,
+  ERR_INVALID_REQUEST: -32600,
+  ERR_METHOD_NOT_FOUND: -32601
+};
+
 // Create an output channel for Lama2 Language Server
 const outputChannel = vscode.window.createOutputChannel(
   "Lama2 Language Server"
