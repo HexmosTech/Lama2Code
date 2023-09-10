@@ -2,7 +2,7 @@ import * as vscode from "vscode";
 import { ChildProcess } from "child_process";
 import {
   ILSPRequestDetails,
-  sendRequestToLSPReadResponse,
+  askLSP,
 } from "./generalRequest";
 import { IJSONRPCResponse } from "../response/generalResponse";
 
@@ -25,7 +25,7 @@ export async function getEnvsFromLsp(
       searchQuery: typedEnvArg,
     },
   };
-  const response: IJSONRPCResponse = await sendRequestToLSPReadResponse(
+  const response: IJSONRPCResponse = await askLSP(
     envsReq
   );
   return response;

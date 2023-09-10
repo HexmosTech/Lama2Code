@@ -2,10 +2,10 @@ import * as vscode from "vscode";
 import { ChildProcess } from "child_process";
 import {
   ILSPRequestDetails,
-  sendRequestToLSPReadResponse,
+  askLSP,
 } from "../request/generalRequest";
 
-export function initlizeServer(langServer: ChildProcess, requestId: number) {
+export function initializeLangServer(langServer: ChildProcess, requestId: number) {
   let initLspReq: ILSPRequestDetails = {
     process: langServer,
     id: requestId,
@@ -27,25 +27,25 @@ export function initlizeServer(langServer: ChildProcess, requestId: number) {
       },
     },
   };
-  sendRequestToLSPReadResponse(initLspReq);
+  askLSP(initLspReq);
 }
 
-export function exitLsp(langServer: ChildProcess, requestId: number) {
+export function exitLangServer(langServer: ChildProcess, requestId: number) {
   requestId += 1;
   let exitReq: ILSPRequestDetails = {
     process: langServer,
     id: requestId,
     method: "exit",
   };
-  sendRequestToLSPReadResponse(exitReq);
+  askLSP(exitReq);
 }
 
-export function shutDownLsp(langServer: ChildProcess, requestId: number) {
+export function shutDownLangServer(langServer: ChildProcess, requestId: number) {
   requestId += 1;
   let shutdownReq: ILSPRequestDetails = {
     process: langServer,
     id: requestId,
     method: "shutdown",
   };
-  sendRequestToLSPReadResponse(shutdownReq);
+  askLSP(shutdownReq);
 }
