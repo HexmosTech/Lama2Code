@@ -1,8 +1,19 @@
 import * as vscode from "vscode";
 import * as semver from "semver";
+import * as child_process from "child_process";
 
 import { genCodeSnip } from "./generateCodeSnippet";
 import { getRemoteUrl } from "./getRemoteUrl";
+import { genLama2Examples } from "./genLama2Examples";
+import { execCurL2File } from "./executeCurrentFile";
+import { prettifyL2File } from "./prettifyL2File";
+import { getL2VersionAndUpdatePrompt } from "./checkL2Version";
+
+import {
+  exitLsp as exitLangServer,
+  initlizeServer as initlizeLangServer,
+  shutDownLsp as shutDownLangServer,
+} from "./lsp/methods/lspLifecycles";
 import {
   getDotENVS,
   lama2RegisterCompletionItemProvider,
@@ -10,20 +21,9 @@ import {
   suggestENVSFromDotEnv,
   triggerSuggestionInTemplateLiteral,
 } from "./lsp/methods/suggestEnvironmentVars";
-import { genLama2Examples } from "./genLama2Examples";
-import { execCurL2File } from "./executeCurrentFile";
-import { prettifyL2File } from "./prettifyL2File";
-import { getL2VersionAndUpdatePrompt } from "./checkL2Version";
-
-import * as child_process from "child_process";
-import {
-  exitLsp,
-  initlizeServer,
-  shutDownLsp,
-} from "./lsp/methods/lspLifecycles";
 import { logToChannel } from "./lsp/response/generalResponse";
 
-export const MIN_VERSION_TO_CHECK = "1.2.3";
+export const MIN_VERSION_TO_CHECK = "1.5.8";
 let requestId = 1;
 
 const langServer = child_process.spawn("l2", ["--lsp"]);
@@ -31,7 +31,7 @@ const langServer = child_process.spawn("l2", ["--lsp"]);
 export function activate(context: vscode.ExtensionContext) {
   console.log('>>> Congratulations, your extension "Lama2" is now active!');
 
-  initlizeServer(langServer, requestId);
+  initlizeLangServer(langServer, requestId);
 
   // Level1 command pallette
   let executeCurrentFileDisposable = execCurL2File(context);
@@ -106,7 +106,7 @@ export function activate(context: vscode.ExtensionContext) {
 }
 
 export function deactivate() {
-  shutDownLsp(langServer, requestId);
-  exitLsp(langServer, requestId);
+  shutDownLangServer(langServer, requestId);
+  exitLangServer(langServer, requestId);
   logToChannel({ msg: "Extension deactivated" });
 }
