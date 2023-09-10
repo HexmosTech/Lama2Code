@@ -9,7 +9,7 @@ import {
   replaceTextAfterEnvSelected,
   suggestENVSFromDotEnv,
   triggerSuggestionInTemplateLiteral,
-} from "./suggestEnvironmentVars";
+} from "./lsp/methods/suggestEnvironmentVars";
 import { genLama2Examples } from "./genLama2Examples";
 import { execCurL2File } from "./executeCurrentFile";
 import { prettifyL2File } from "./prettifyL2File";
@@ -17,13 +17,11 @@ import { getL2VersionAndUpdatePrompt } from "./checkL2Version";
 
 import * as child_process from "child_process";
 import {
-  logToChannel,
-} from "./lsp/utils";
-import {
   exitLsp,
   initlizeServer,
   shutDownLsp,
 } from "./lsp/methods/lspLifecycles";
+import { logToChannel } from "./lsp/response/generalResponse";
 
 export const MIN_VERSION_TO_CHECK = "1.2.3";
 let requestId = 1;

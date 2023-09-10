@@ -1,10 +1,10 @@
 import * as vscode from "vscode";
 import { ChildProcess } from "child_process";
 import {
-  IJSONRPCResponse,
   ILSPRequestDetails,
   sendRequestToLSPReadResponse,
-} from "../utils";
+} from "./generalRequest";
+import { IJSONRPCResponse } from "../response/generalResponse";
 
 export async function getEnvsFromLsp(
   langServer: ChildProcess,

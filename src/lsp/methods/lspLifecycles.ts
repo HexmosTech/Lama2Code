@@ -1,6 +1,9 @@
 import * as vscode from "vscode";
 import { ChildProcess } from "child_process";
-import { ILSPRequestDetails, sendRequestToLSPReadResponse } from "../utils";
+import {
+  ILSPRequestDetails,
+  sendRequestToLSPReadResponse,
+} from "../request/generalRequest";
 
 export function initlizeServer(langServer: ChildProcess, requestId: number) {
   let initLspReq: ILSPRequestDetails = {
