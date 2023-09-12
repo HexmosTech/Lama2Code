@@ -1,9 +1,10 @@
 import * as vscode from "vscode";
-import { ChildProcess } from "child_process";
 import { ILSPRequestDetails, askLSP } from "../request/generalRequest";
+import * as child_process from "child_process";
+
+const langServer = child_process.spawn("l2", ["--lsp"]);
 
 export function initializeLangServer(
-  langServer: ChildProcess,
   requestId: number
 ) {
   let initLspReq: ILSPRequestDetails = {
@@ -28,9 +29,10 @@ export function initializeLangServer(
     },
   };
   askLSP(initLspReq);
+  return langServer
 }
 
-export function exitLangServer(langServer: ChildProcess, requestId: number) {
+export function exitLangServer(requestId: number) {
   requestId += 1;
   let exitReq: ILSPRequestDetails = {
     process: langServer,
@@ -41,7 +43,6 @@ export function exitLangServer(langServer: ChildProcess, requestId: number) {
 }
 
 export function shutDownLangServer(
-  langServer: ChildProcess,
   requestId: number
 ) {
   requestId += 1;

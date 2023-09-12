@@ -1,6 +1,5 @@
 import * as vscode from "vscode";
 import * as semver from "semver";
-import * as child_process from "child_process";
 
 import { genCodeSnip } from "./generateCodeSnippet";
 import { getRemoteUrl } from "./getRemoteUrl";
@@ -23,12 +22,11 @@ import { logToChannel } from "./lsp/response/generalResponse";
 export const MIN_VERSION_TO_CHECK = "1.5.9";
 let requestId = 1;
 
-const langServer = child_process.spawn("l2", ["--lsp"]);
 
 export function activate(context: vscode.ExtensionContext) {
   console.log('>>> Congratulations, your extension "Lama2" is now active!');
 
-  initializeLangServer(langServer, requestId);
+  let langServer = initializeLangServer(requestId);
   getL2VersionAndUpdatePrompt(MIN_VERSION_TO_CHECK);
 
   // Level1 command pallette
@@ -76,7 +74,7 @@ export function activate(context: vscode.ExtensionContext) {
 }
 
 export function deactivate() {
-  shutDownLangServer(langServer, requestId);
-  exitLangServer(langServer, requestId);
+  shutDownLangServer(requestId);
+  exitLangServer(requestId);
   logToChannel({ msg: "Extension deactivated" });
 }
