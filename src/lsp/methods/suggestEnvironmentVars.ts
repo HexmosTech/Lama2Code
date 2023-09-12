@@ -83,7 +83,9 @@ export function triggerSuggestionInTemplateLiteral() {
       const cursorPosition = editor.selection.active;
       const lineText = editor.document.lineAt(cursorPosition.line).text;
 
-      if (isCursorInsideStringVarContainer(lineText, cursorPosition.character)) {
+      if (
+        isCursorInsideStringVarContainer(lineText, cursorPosition.character)
+      ) {
         // Manually trigger suggestions
         vscode.commands.executeCommand("editor.action.triggerSuggest");
       }
@@ -191,5 +193,3 @@ export function lama2RegisterCompletionItemProvider(
     lama2ProvideCompletionItems(langServer, requestId)
   );
 }
-
-
