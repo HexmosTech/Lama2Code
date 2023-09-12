@@ -50,14 +50,22 @@ function createSuggestionsArray(
   });
 }
 
-function isCursorInVarContainer(
+function isCursorInsideStringVarContainer(
   lineText: string,
   cursorCharacter: number
 ): boolean {
   let insideTemplateLiteral = false;
+  let insideStringQuotes = false;
+
+  let lastQuoteIndex = lineText.lastIndexOf('"', cursorCharacter - 1);
+  let nextQuoteIndex = lineText.indexOf('"', cursorCharacter);
+
+  if (lastQuoteIndex !== -1 && nextQuoteIndex !== -1) {
+    insideStringQuotes = true;
+  }
 
   for (let i = 0; i < cursorCharacter; i++) {
-    if (lineText[i] === "$" && lineText[i + 1] === "{") {
+    if (lineText[i] === "$" && lineText[i + 1] === "{" && insideStringQuotes) {
       insideTemplateLiteral = true;
     }
 
@@ -75,7 +83,7 @@ export function triggerSuggestionInTemplateLiteral() {
       const cursorPosition = editor.selection.active;
       const lineText = editor.document.lineAt(cursorPosition.line).text;
 
-      if (isCursorInVarContainer(lineText, cursorPosition.character)) {
+      if (isCursorInsideStringVarContainer(lineText, cursorPosition.character)) {
         // Manually trigger suggestions
         vscode.commands.executeCommand("editor.action.triggerSuggest");
       }
