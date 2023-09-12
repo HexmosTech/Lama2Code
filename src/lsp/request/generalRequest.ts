@@ -30,7 +30,9 @@ function isProcessInitialized(process: any): boolean {
 }
 
 // Create a JSON RPC request
-function createJSONRPCRequest(requestDetails: ILSPRequestDetails): IJSONRPCRequest {
+function createJSONRPCRequest(
+  requestDetails: ILSPRequestDetails
+): IJSONRPCRequest {
   const { id, method, params = {} } = requestDetails;
   return {
     jsonrpc: "2.0",
@@ -72,7 +74,9 @@ function handleProcessResponse(process: any, resolve: any, reject: any) {
 }
 
 // Main function to send requests to the Language Server Protocol and read responses
-export function askLSP(requestDetails: ILSPRequestDetails): Promise<IJSONRPCResponse> {
+export function askLSP(
+  requestDetails: ILSPRequestDetails
+): Promise<IJSONRPCResponse> {
   return new Promise((resolve, reject) => {
     const { process } = requestDetails;
 
