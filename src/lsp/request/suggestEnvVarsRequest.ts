@@ -8,7 +8,7 @@ export async function getEnvsFromLsp(
   requestId: number,
   document: vscode.TextDocument,
   position: vscode.Position,
-  typedEnvArg: string
+  searchQuery: string
 ) {
   let envsReq: ILSPRequestDetails = {
     process: langServer,
@@ -19,7 +19,7 @@ export async function getEnvsFromLsp(
         uri: document.uri.toString(),
       },
       position: position,
-      searchQuery: typedEnvArg,
+      searchQuery: searchQuery,
     },
   };
   const response: IJSONRPCResponse = await askLSP(envsReq);

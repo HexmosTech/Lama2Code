@@ -111,7 +111,7 @@ export function lama2ProvideCompletionItems(
         cursorIndex
       );
 
-      const typedEnvArg = currentLine.substring(
+      const searchQuery = currentLine.substring(
         openingBraceIndex + 2,
         cursorIndex
       );
@@ -121,7 +121,7 @@ export function lama2ProvideCompletionItems(
         requestId,
         document,
         position,
-        typedEnvArg
+        searchQuery
       );
       logToChannel({
         msg: "Received envs from server",
