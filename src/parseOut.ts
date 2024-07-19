@@ -13,5 +13,5 @@ export default function lama2Output(content: string) {
     console.log("Trying to parse JSON");
     console.log("error = ", e);
   }
-  return [res["logs"].trim(), res["headers"].trim(), res["body"].trim()];
+  return [res["logs"].trim(), res["headers"].trim(), res["body"].trim(),res["performance"],res["statusCodes"],res["contentSizes"]];
 }

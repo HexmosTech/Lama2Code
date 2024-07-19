@@ -5,3 +5,19 @@ h2 {
 #responsebody {
   overflow-x: scroll;
 }
+
+.status-info {
+  display: flex;
+  justify-content: flex-start;
+  font-weight: bold;
+  font-size: 1rem;
+  gap: 1rem;
+}
+
+.status-success {
+  color: #14CC3C;
+}
+
+.status-error {
+  color: red;
+}

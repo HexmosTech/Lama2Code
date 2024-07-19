@@ -78,12 +78,28 @@ class ExecuteCurrentFile {
     return op;
   }
 
+  createTable(headers) {
+    let table = '<table>';
+
+    headers.forEach(header => {
+        let splitHeader = header.split(':');
+        table += `<tr><td>${splitHeader[0]}</td><td>${splitHeader[1]}</td></tr>`;
+    });
+
+    table += '</table>';
+
+    return table;
+}
+
   getWrappedHtml(
     lama2LogHTML: string,
     httpHead: string,
     body: string,
     styles: Array<string>,
-    scripts: Array<string>
+    scripts: Array<string>,
+    responseTime: Array<Object>,
+    statusCodes: Array<Object>,
+    contentSizes:Array<Object>,
   ) {
     /*
         try {
@@ -91,18 +107,29 @@ class ExecuteCurrentFile {
             body = json2html.render(j, {plainHTML: true})
         } catch (e) {}
         */
+    console.log(httpHead)
+    httpHead = this.createTable(httpHead.split('<br/>'));
+    let statusCode = statusCodes[1]["statusCode"];
+    let contentSize = contentSizes[1]["sizeInBytes"];
+    let responseTime1 = responseTime[1]["timeInMs"];
     return `${this.getStyleTags(styles)}
-        <ul data-tabs>
-            <li><a data-tabby-default href="#main">Response</a></li>
-            <li><a href="#httphead">Headers</a></li>
-            <li><a href="#elflog">Lama2 Logs</a></li>
-        </ul>
-        <div id="main">
-            <div id="responsebody">${body}</div>
-            <div id="wrapper"></div>
+        <div class="status-info">
+            <p>Status: <span class="${statusCode >= 200 && statusCode < 300 ? 'status-success' : 'status-error'}">${statusCode}</span></p>
+            <p>Content-Size: <span class="${statusCode >= 200 && statusCode < 300 ? 'status-success' : 'status-error'}">${contentSize}bytes</span></p>
+            <p>Time: <span class="${statusCode >= 200 && statusCode < 300 ? 'status-success' : 'status-error'}">${responseTime1}ms</span></p>
         </div>
-        <div id="httphead">${httpHead}</div>
-        <div id="elflog">${lama2LogHTML}</div>
+
+       <ul data-tabs>
+          <li><a  data-tabby-default href="#main">Response</a></li>
+          <li><a  href="#httphead">Headers</a></li>
+          <li><a  href="#elflog">Lama2 Logs</a></li>
+      </ul>
+      <div id="main">
+          <div id="responsebody">${body}</div>
+          <div id="wrapper"></div>
+      </div>
+      <div id="httphead">${httpHead}</div>
+      <div id="elflog">${lama2LogHTML}</div>
         ${this.getScriptTags(scripts)}
         `;
   }
@@ -151,9 +178,10 @@ class ExecuteCurrentFile {
   postLama2Command() {
     let content = fs.readFileSync(this.outPath).toString();
     console.log("Content = ", content);
-    let lama2Log, httpHead, body;
-    [lama2Log, httpHead, body] = splitLama2Output(content);
-    console.log("body = ", body);
+    let lama2Log, httpHead, body, performance, statusCodes, contentSizes;
+    [lama2Log, httpHead, body, performance,statusCodes,contentSizes] = splitLama2Output(content);
+    let responseTime = performance["responseTimes"];
+    console.log("body1 = ", performance);
     let lama2LogHTML = this.convert.toHtml(lama2Log);
     let httpHeadHTML = this.convert.toHtml(httpHead);
     const stylesrc = this.getWebViewUri("style.css");
@@ -176,7 +204,10 @@ class ExecuteCurrentFile {
       httpHeadHTML,
       body,
       styles,
-      scripts
+      scripts,
+      responseTime,
+      statusCodes,
+      contentSizes,
     );
 
     fs.unlinkSync(this.outPath);

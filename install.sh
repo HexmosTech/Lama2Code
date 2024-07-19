@@ -2,7 +2,7 @@
 
 yarn
 rm -rf *.vsix
-sudo npm install -g vsce
+npm install -g vsce
 cp -r http ~/.vscode/extensions
 yes | vsce package
 code --install-extension *.vsix
