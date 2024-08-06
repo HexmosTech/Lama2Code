@@ -1,26 +1,6 @@
-import * as vscode from "vscode";
-import * as semver from "semver";
-
-import { genCodeSnip } from "./generateCodeSnippet";
-import { getRemoteUrl } from "./getRemoteUrl";
-import { genLama2Examples } from "./genLama2Examples";
-import { execCurL2File } from "./executeCurrentFile";
-import { prettifyL2File } from "./prettifyL2File";
-import { getL2VersionAndUpdatePrompt } from "./checkL2Version";
-
-import {
-  exitLangServer,
-  initializeLangServer,
-  shutDownLangServer,
-} from "./lsp/methods/lspLifecycles";
-import {
-  lama2RegisterCompletionItemProvider,
-  triggerSuggestionInTemplateLiteral,
-} from "./lsp/methods/suggestEnvironmentVars";
-import { logToChannel } from "./lsp/response/generalResponse";
-
-export const MIN_VERSION_TO_CHECK = "1.5.9";
-let requestId = 1;
+import { commands, ExtensionContext } from "vscode";
+import { HelloWorldPanel } from "./panels/HelloWorldPanel";
+import { execCurL2File } from "@/commands/executecurrentfile/executeCurrentFile";
 
 
 export function activate(context: vscode.ExtensionContext) {
@@ -69,12 +49,7 @@ export function activate(context: vscode.ExtensionContext) {
    * automatically trigger suggestions within specific contexts like a
    * template literal inside string quotes.
    */
-  const listener = triggerSuggestionInTemplateLiteral();
-  context.subscriptions.push(listener);
+  // const listener = triggerSuggestionInTemplateLiteral();
+  // context.subscriptions.push(listener);
 }
 
-export function deactivate() {
-  shutDownLangServer(requestId);
-  exitLangServer(requestId);
-  logToChannel({ msg: "Extension deactivated" });
-}
