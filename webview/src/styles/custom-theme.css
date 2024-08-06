@@ -1,0 +1,67 @@
+.custom-table .p-datatable-table {
+    border: 1px solid #ccc;
+}
+
+.custom-table .p-datatable-thead>tr>th,
+.custom-table .p-datatable-tbody>tr>td {
+    border: 1px solid #ccc;
+}
+
+.icon-box {
+    display: flex;
+    align-items: center;
+    /* border: 1px solid #ccc; */
+    /* padding: 10px; */
+    margin-left: auto;
+    /* Push the icons to the right */
+}
+.icon-box-toggle {
+    display: flex;
+    align-items: center;
+    border: 1px solid #ccc;
+    /* padding: 10px; */
+    margin-left: auto;
+    border-radius: 15%;
+    /* Push the icons to the right */
+}
+
+
+.icon-box i {
+    font-size: 20px;
+    /* Enlarge the icons */
+    margin: 3px;
+    /* Space between icons */
+    cursor: pointer;
+    /* Make icons clickable */
+}
+
+.icon-box .bordered-icon {
+    /* border-left: 1px solid #ccc;
+    border-right: 1px solid #ccc; */
+    padding: 3px;
+}
+
+
+
+.icon-box .highlighted {
+    background-color: #f0f0f0;
+    /* Highlight background color */
+    border-radius: 4px;
+
+    /* Optional: rounded corners */
+}
+
+
+.status-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    /* Ensure it takes full width */
+}
+
+.status-info p {
+    margin: 0 10px;
+    font-size: large;
+    /* Space between status texts */
+}
