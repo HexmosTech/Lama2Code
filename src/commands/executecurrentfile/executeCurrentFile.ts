@@ -230,6 +230,7 @@ class ExecuteCurrentFile {
       );
     }
     this.panel.webview.html = `<h2>Loading...</h2>${this.getSpinnerFragment()}`;
+    
     lama2Term.sendText(lama2Command);
   }
 

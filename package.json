@@ -36,11 +36,11 @@
   "main": "./out/extension.js",
   "contributes": {
     "resources": [
-    {
-      "path": "webview/build/assets",
-      "scheme": "vscode-resource"
-    }
-  ],
+      {
+        "path": "webview/build/assets",
+        "scheme": "vscode-resource"
+      }
+    ],
     "languages": [
       {
         "id": "lama2",
@@ -93,6 +93,13 @@
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src --ext ts"
+  },
+  "dependencies": {
+    "ansi-to-html": "^0.7.2",
+    "chokidar": "^3.5.3",
+    "json2html": "^0.0.8",
+    "semver": "^7.5.4",
+    "simple-git": "^3.17.0"
   },
   "devDependencies": {
     "@types/glob": "^7.1.3",
