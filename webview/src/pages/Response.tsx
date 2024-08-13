@@ -1,17 +1,23 @@
-import { useState } from "preact/hooks";
+import { useState, useEffect } from "preact/hooks";
 import { TabView, TabPanel } from "primereact/tabview";
 import { classNames } from "primereact/utils";
 import ReactJson from "react-json-view";
+
+import { ProgressSpinner } from "primereact/progressspinner";
+
+import { Button } from "primereact/button";
+
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
 // @ts-ignore
-import JsonIcon from "@/assets/json.js";
+import JsonIcon from "@/assets/json.jsx";
 // @ts-ignore
-import GridIcon from "@/assets/grid.js";
+import GridIcon from "@/assets/grid.jsx";
 // @ts-ignore
-import CopyIcon from "@/assets/copy.js";
+import CopyIcon from "@/assets/copy.jsx";
 // @ts-ignore
-import LogsIcon from "@/assets/logs.js";
+import LogsIcon from "@/assets/logs.jsx";
+import { time } from "console";
 // dark theme
 // import "primereact/resources/themes/saga-blue/theme.css";
 
@@ -19,113 +25,106 @@ import LogsIcon from "@/assets/logs.js";
 // import "primereact/resources/themes/lara-dark-teal/theme.css";
 
 const Response = () => {
-  const object = {
-    result: {
-      success: true,
-      message: "Successfully obtained org member",
-      om: {
-        UserPointer: {
-          __type: "Pointer",
-          className: "_User",
-          objectId: "5XBNbmExny",
-        },
-        email: "abc@gmail.com",
-        organization: "4uPBk93xBM",
-        team: "Feedzap",
-        is_admin: true,
-        isActive: true,
-        createdAt: "2024-03-15T14:05:21.684Z",
-        updatedAt: "2024-07-17T14:29:04.016Z",
-        first_name: "ABC",
-        last_name: "CDS",
-        objectId: "6YCPrvfeIF",
-        __type: "Object",
-        className: "OrgMember",
-      },
-      org: {
-        orgName: "Hexmos",
-        orgEmail: "info@hexmos.com",
-        orgLocation: "bangalore",
-        createdAt: "2022-12-01T15:43:47.525Z",
-        updatedAt: "2024-07-10T14:06:05.527Z",
-        stripeCustomerId: "cus_NWE7nsOGBclBG3",
-        extraParams: "{}",
-        logo: "https://hexmos.com/static/hexmosofficiallogo.svg",
-        objectId: "4uPBk93xBM",
-        __type: "Object",
-        className: "Organization",
-      },
-      fbu: {
-        userPointer: {
-          __type: "Pointer",
-          className: "_User",
-          objectId: "5XBNbmExny",
-        },
-        organizationTitlePointer: {
-          __type: "Pointer",
-          className: "OrganizationTitles",
-          objectId: "Uisl4dgiZl",
-        },
-        orgMemberPointer: {
-          __type: "Pointer",
-          className: "OrgMember",
-          objectId: "6YCPrvfeIF",
-        },
-        organizationPointer: {
-          __type: "Pointer",
-          className: "Organization",
-          objectId: "4uPBk93xBM",
-        },
-        organizationProfilesPointer: {
-          __type: "Pointer",
-          className: "OrganizationProfiles",
-          objectId: "CkAm4Atwck",
-        },
-        licencePointer: {
-          __type: "Pointer",
-          className: "Licence",
-          objectId: "kmSrZAWedr",
-        },
-        isActive: true,
-        isDeleted: false,
-        createdAt: "2024-03-15T14:05:30.273Z",
-        updatedAt: "2024-07-17T14:27:36.304Z",
-        teamsPointer: {
-          __type: "Pointer",
-          className: "Teams",
-          objectId: "lEOc7Kv1zK",
-        },
-        objectId: "TXaPpeEaiY",
-        __type: "Object",
-        className: "FeedbackUser",
-      },
-    },
-  };
-  const tableData = [
-    { header: "date", value: "Sat, 03 Aug 2024 09:44:06 GMT" },
-    { header: "content-type", value: "application/json" },
-    { header: "content-length", value: "821" },
-    { header: "connection", value: "close" },
-    { header: "server", value: "gunicorn/19.9.0" },
-    { header: "access-control-allow-origin", value: "*" },
-    { header: "access-control-allow-credentials", value: "true" },
-  ];
- const [highlightedIcon, setHighlightedIcon] = useState("code");
+  interface HeaderItem {
+    header: string;
+    value: string;
+  }
 
- const toggleIcon = (icon:string) => {
-   setHighlightedIcon(icon);
- };
+  const [highlightedIcon, setHighlightedIcon] = useState("code");
+  const [body, setBody] = useState({});
+  const [isLoading, setIsLoading] = useState(false);
+  const [apiMetrics, setApiMetrics] = useState({
+    status: "",
+    time: "",
+    size: "",
+  });
+  const toggleIcon = (icon: string) => {
+    setHighlightedIcon(icon);
+  };
+  const [headers, setHeaders] = useState<HeaderItem[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  function convertHeadersToTableData(headersString: string): HeaderItem[] {
+    const headers = headersString.split("\n");
+    return headers
+      .filter((header: string) => header.trim() !== "")
+      .map((header) => {
+        const [key, ...valueParts] = header.split(":");
+        return {
+          header: key.toLowerCase().trim(),
+          value: valueParts.join(":").trim(),
+        };
+      });
+  }
+
+  useEffect(() => {
+    const messageListener = (event: MessageEvent) => {
+      const message = event.data;
+      if (message.command === "update") {
+        console.log("message", message);
+
+        const data = JSON.parse(message.body);
+
+        if (data.status === "starting") {
+          setIsLoading(true);
+          setError(null); // Clear any previous errors
+          return;
+        }
+
+        if (data.status === "error") {
+          setIsLoading(false);
+          setError(data.error);
+          return;
+        }
+
+        try {
+          setBody(JSON.parse(data.body));
+          const statusCode = data.statusCodes[0].statusCode;
+          const performance = data.performance.responseTimes[0].timeInMs;
+          const size = data.contentSizes[0].sizeInBytes;
+          setApiMetrics({ status: statusCode, time: performance, size: size });
+          setHeaders(convertHeadersToTableData(data.headers));
+          setError(null); // Clear any previous errors
+        } catch (error) {
+          console.log("error", error);
+          setError("Failed to parse response data");
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    window.addEventListener("message", messageListener);
+
+    return () => window.removeEventListener("message", messageListener);
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="spinner-container">
+        <ProgressSpinner />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="error-container">
+        <p className="error-message">{error}</p>
+      </div>
+    );
+  }
+
   return (
     <div className="card" style={{ width: "100%" }}>
       <TabView>
         <TabPanel header="Response">
-          <div className="status-info mb-3" style={{ width: "80%" }}>
+          <div className="status-info mb-3" style={{ width: "100%" }}>
             <div
               className="flex justify-content-between align-items-center"
               style={{ width: "200px" }}>
-              <p className={classNames("m-0", "text-green-400")}>200</p>
-              <p className={classNames("m-0", "text-gray-400")}>700ms</p>
-              <p className={classNames("m-0", "text-gray-400")}>123B</p>
+              <p className={classNames("m-0", "text-green-400")}>{apiMetrics.status}</p>
+              <p className={classNames("m-0", "text-gray-400")}>{apiMetrics.time}ms</p>
+              <p className={classNames("m-0", "text-gray-400")}>{apiMetrics.size}B</p>
             </div>
             <div className="icon-box">
               <div className="flex icon-box-toggle">
@@ -134,7 +133,11 @@ const Response = () => {
                     highlighted: highlightedIcon === "code",
                   })}
                   onClick={() => toggleIcon("code")}>
-                  <JsonIcon fill="#FFFFFF" width="1rem" height="1rem" />
+                  <JsonIcon
+                    fill={highlightedIcon === "code" ? "" : "#FFFFFF"}
+                    width="1rem"
+                    height="1rem"
+                  />
                 </div>
                 <div
                   className={classNames("bordered-icon", {
@@ -149,7 +152,7 @@ const Response = () => {
                 className={classNames("bordered-icon", {
                   highlighted: highlightedIcon === "clone",
                 })}>
-                <CopyIcon fill="#FFFFFF" width="1rem" height="1rem" />
+                <CopyIcon fill="#FFFFFF" width="1.5rem" height="1.5rem" />
               </div>
               <div className={classNames({ highlighted: highlightedIcon === "info" })}>
                 <LogsIcon fill="#FFFFFF" width="1rem" height="1rem" />
@@ -158,12 +161,12 @@ const Response = () => {
           </div>
 
           <div>
-            <ReactJson src={object} theme={"monokai"} displayDataTypes={false} />
+            <ReactJson src={body} theme={"monokai"} displayDataTypes={false} />
           </div>
         </TabPanel>
         <TabPanel header="Headers">
           <div className="card">
-            <DataTable value={tableData} tableStyle={{ minWidth: "50rem" }}>
+            <DataTable value={headers} tableStyle={{ minWidth: "50rem" }}>
               <Column field="header" header="Header"></Column>
               <Column field="value" header="Value"></Column>
             </DataTable>
@@ -175,5 +178,3 @@ const Response = () => {
 };
 
 export default Response;
-
-
