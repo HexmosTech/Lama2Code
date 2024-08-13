@@ -13,6 +13,7 @@
     /* border: 1px solid #ccc; */
     /* padding: 10px; */
     margin-left: auto;
+    cursor: pointer;
     /* Push the icons to the right */
 }
 .icon-box-toggle {
@@ -22,6 +23,7 @@
     /* padding: 10px; */
     margin-left: auto;
     border-radius: 15%;
+    cursor: pointer;
     /* Push the icons to the right */
 }
 
@@ -64,4 +66,38 @@
     margin: 0 10px;
     font-size: large;
     /* Space between status texts */
+}
+.spinner-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    /* This makes the container full height of the viewport */
+    width: 100vw;
+    /* This makes the container full width of the viewport */
+    position: fixed;
+    /* This positions the container relative to the viewport */
+    top: 0;
+    left: 0;
+}
+
+
+.p-progress-spinner-circle {
+    /* fix for IE browsers */
+    stroke: #d62d20;
+    stroke-dasharray: 89, 200;
+}
+
+
+.error-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+}
+
+.error-message {
+    color: #ff4d4f;
+    font-size: 16px;
+    text-align: center;
 }
