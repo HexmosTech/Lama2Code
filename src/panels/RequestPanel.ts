@@ -34,6 +34,7 @@ export class Lama2Panel {
     }
 
     public static render(extensionUri: vscode.Uri) {
+        console.log("extensionUri",extensionUri)
 
         if (Lama2Panel.currentPanel) {
             // If the webview panel already exists reveal it
@@ -54,7 +55,11 @@ export class Lama2Panel {
                     // Restrict the webview to only load resources from the `out` and `webview-ui/build` directories
                     localResourceRoots: [
                         vscode.Uri.joinPath(extensionUri, "out"),
-                        vscode.Uri.joinPath(extensionUri, "webview/build")
+                        vscode.Uri.joinPath(extensionUri, "webview/build"),
+                        vscode.Uri.joinPath(extensionUri, "webview/codicons/dist"),
+                        vscode.Uri.joinPath(extensionUri, 'media'),
+                        vscode.Uri.joinPath(extensionUri, 'images'),
+                        vscode.Uri.joinPath(extensionUri, 'assets')
                     ],
                 }
             );
@@ -66,7 +71,7 @@ export class Lama2Panel {
     public async executeLama2Command() {
         this._panel.webview.postMessage({ 
             command: 'update',
-            body: JSON.stringify({ status: 'starting' })
+            status: 'starting',
         });
 
         const { cmd, rflag, rfile } = getLama2Command();
@@ -75,37 +80,39 @@ export class Lama2Panel {
 
         // Execute command and capture output
         exec(cmd, (error, stdout, stderr) => {
-            if (stdout) {
-                fs.access(rfile, fs.constants.F_OK, (err) => {
-                console.log('Checking if output file exists',err);
-                if (err) {
-                    // console.log('Checking if output file exists');
-                    this.handleCommandError("Output file not created");
-                } else {
-                    this.onLama2Finish(rfile);
-                }
-                });
-                return
-            }
-            
-            if (error) {
-                console.error(`exec error: ${error}`);
-                this.handleCommandError(stderr);
+        if (stdout) {
+            // Check if stdout is HTML
+            if (stdout.trim().startsWith('<')) {
+                // If it's HTML, call onLama2Finish directly with stdout
+                this.onLama2Finish(stdout);
                 return;
             }
 
-            if (stderr) {
-                console.error(`stderr: ${stderr}`);
-                this.handleCommandError(stderr);
-                return;
+        // If it's not HTML, proceed with the file check
+        fs.access(rfile, fs.constants.F_OK, (err) => {
+            console.log('Checking if output file exists', err);
+            if (err) {
+                console.log('Output file does not exist');
+                this.handleCommandError("Output file not created");
+            } else {
+                this.onLama2Finish(rfile);
             }
-
-            console.log(`stdout: ${stdout}`);
-            
-            // Check if the output file exists
-            
-            
         });
+        return;
+    }
+    
+    if (error) {
+        console.error(`exec error: ${error}`);
+        this.handleCommandError(stderr);
+        return;
+    }
+
+    if (stderr) {
+        console.error(`stderr: ${stderr}`);
+        this.handleCommandError(stderr);
+        return;
+    }
+});
     }
 
     private handleCommandError(errorMessage: string) {
@@ -116,32 +123,47 @@ export class Lama2Panel {
 
         this._panel.webview.postMessage({
             command: 'update',
+            status: 'error',
             body: JSON.stringify({ 
-                status: 'error',
                 error: errorToSend
             })
         });
     }
 
-    private async onLama2Finish(outputFile: string) {
-    try {
-        const content = await vscode.workspace.fs.readFile(vscode.Uri.file(outputFile));
-        const [lama2Log, httpHead, body] = splitLama2Output(content.toString());
+    private async onLama2Finish(output: string) {
+        try {
+            if (typeof output === 'string' && output.trim().startsWith('<')) { 
+                console.log("outputFile",output)
 
-        // Check if the body is valid JSON
-        JSON.parse(body); // This will throw an error if body is not valid JSON
 
-        // Send data to webview
-        this._panel.webview.postMessage({ 
-            command: 'update',
-            status: 'finished',
-            lama2Log,
-            httpHead,
-            body
-        });
+                 this._panel.webview.postMessage({ 
+                    command: 'update',
+                    status: 'finished',
+                     body: { body: output },
+                    lama2Log: '',
+                    httpHead: ''
+                });
+            }
+            else {
+                const content = await vscode.workspace.fs.readFile(vscode.Uri.file(output));
+                const [lama2Log, httpHead, body] = splitLama2Output(content.toString());
+
+                // Check if the body is valid JSON
+                JSON.parse(body); // This will throw an error if body is not valid JSON
+
+                // Send data to webview
+                this._panel.webview.postMessage({ 
+                    command: 'update',
+                    status: 'finished',
+                    lama2Log,
+                    httpHead,
+                    body
+                });
 
         // Clean up temporary files
-        await vscode.workspace.fs.delete(vscode.Uri.file(outputFile));
+        await vscode.workspace.fs.delete(vscode.Uri.file(output));
+        }
+        
     } catch (error) {
         console.error('Error processing Lama2 output:', error);
         this.handleCommandError(error instanceof Error ? error.message : 'An error occurred while processing the Lama2 output');
@@ -173,7 +195,7 @@ export class Lama2Panel {
         // The JS file from the React build output
         const scriptUri = getUri(webview, this._extensionUri, ["webview", "build", "assets", "index.js"]);
       
-        const codiconsUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'webview','build', 'codicons', 'dist', 'codicon.css'));
+        const codiconsUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'webview', 'codicons', 'dist', 'codicon.css'));
 
         const nonce = getNonce();
 
@@ -183,7 +205,7 @@ export class Lama2Panel {
         <head>
             <meta charset="UTF-8" />
             <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-            <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; script-src 'nonce-${nonce}' 'unsafe-inline'; font-src ${webview.cspSource};">
+           <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src vscode-resource: https: http: data: ${webview.cspSource} 'unsafe-inline'; style-src vscode-resource: https: http: data: ${webview.cspSource} 'unsafe-inline' https://*.vscode-cdn.net; script-src vscode-resource: 'nonce-${nonce}' 'unsafe-inline'; font-src ${webview.cspSource}; frame-src *;">
             <link rel="stylesheet" type="text/css" href="${stylesUri}">
            <link href="${codiconsUri}" rel="stylesheet" />
             <title>Lama2</title>
@@ -191,13 +213,6 @@ export class Lama2Panel {
         <body>
             <div id="root"></div>
             <script type="module" nonce="${nonce}" src="${scriptUri}"></script>
-            <div class="icon"><i class="codicon codicon-account"></i> account</div>
-					<div class="icon"><i class="codicon codicon-activate-breakpoints"></i> activate-breakpoints</div>
-					<div class="icon"><i class="codicon codicon-add"></i> add</div>
-					<div class="icon"><i class="codicon codicon-archive"></i> archive</div>
-					<div class="icon"><i class="codicon codicon-arrow-both"></i> arrow-both</div>
-					<div class="icon"><i class="codicon codicon-arrow-down"></i> arrow-down</div>
-					<div class="icon"><i class="codicon codicon-arrow-left"></i> arrow-left</div>
         </body>
         </html>
     `;

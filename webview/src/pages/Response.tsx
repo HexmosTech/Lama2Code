@@ -1,49 +1,43 @@
-import { useState, useEffect } from "preact/hooks";
-import { TabView, TabPanel } from "primereact/tabview";
-import { classNames } from "primereact/utils";
-import ReactJson from "react-json-view";
-
-import { ProgressSpinner } from "primereact/progressspinner";
-
-import { Button } from "primereact/button";
-
+import React, { useState, useEffect } from "react";
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
-// @ts-ignore
-import JsonIcon from "@/assets/json.jsx";
-// @ts-ignore
-import GridIcon from "@/assets/grid.jsx";
-// @ts-ignore
-import CopyIcon from "@/assets/copy.jsx";
-// @ts-ignore
-import LogsIcon from "@/assets/logs.jsx";
-import { time } from "console";
-// dark theme
-// import "primereact/resources/themes/saga-blue/theme.css";
+import { ProgressSpinner } from "primereact/progressspinner";
 
-// import "primereact/resources/themes/viva-dark/theme.css"
-// import "primereact/resources/themes/lara-dark-teal/theme.css";
+import Header from "@/modules/Headers";
+import IconPanel from "@/modules/IconPanel";
+import JsonView from "@/modules/JsonView";
+import HtmlView from "@/modules/HtmlView";
+import Metadata from "@/modules/Metadata";
 
-const Response = () => {
-  interface HeaderItem {
-    header: string;
-    value: string;
-  }
+interface HeaderItem {
+  header: string;
+  value: string;
+}
 
-  const [highlightedIcon, setHighlightedIcon] = useState("code");
-  const [body, setBody] = useState({});
-  const [isLoading, setIsLoading] = useState(false);
-  const [apiMetrics, setApiMetrics] = useState({
+interface ApiMetrics {
+  status: string;
+  time: string;
+  size: string;
+}
+
+const Response: React.FC = () => {
+  const [highlightedIcon, setHighlightedIcon] = useState<string>("code");
+  const [htmlContent, setHtmlContent] = useState<string | null>(null);
+  const [body, setBody] = useState<object>({});
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [apiMetrics, setApiMetrics] = useState<ApiMetrics>({
     status: "",
     time: "",
     size: "",
   });
+  const [headers, setHeaders] = useState<HeaderItem[]>([]);
+  const [error, setError] = useState<string | null>(null);
+
   const toggleIcon = (icon: string) => {
     setHighlightedIcon(icon);
   };
-  const [headers, setHeaders] = useState<HeaderItem[]>([]);
-  const [error, setError] = useState<string | null>(null);
-  function convertHeadersToTableData(headersString: string): HeaderItem[] {
+
+  const convertHeadersToTableData = (headersString: string): HeaderItem[] => {
     const headers = headersString.split("\n");
     return headers
       .filter((header: string) => header.trim() !== "")
@@ -54,7 +48,7 @@ const Response = () => {
           value: valueParts.join(":").trim(),
         };
       });
-  }
+  };
 
   useEffect(() => {
     const messageListener = (event: MessageEvent) => {
@@ -62,28 +56,64 @@ const Response = () => {
       if (message.command === "update") {
         console.log("message", message);
 
-        const data = JSON.parse(message.body);
-
-        if (data.status === "starting") {
+        if (message.status === "starting") {
           setIsLoading(true);
-          setError(null); // Clear any previous errors
+          setError(null);
           return;
         }
 
-        if (data.status === "error") {
+        if (message.status === "error") {
           setIsLoading(false);
-          setError(data.error);
+          setError(message.error);
           return;
         }
 
         try {
-          setBody(JSON.parse(data.body));
-          const statusCode = data.statusCodes[0].statusCode;
-          const performance = data.performance.responseTimes[0].timeInMs;
-          const size = data.contentSizes[0].sizeInBytes;
+          let bodyContent;
+          let isHtmlContent = false;
+          let parsedBody;
+
+          // Parse the message body if it's a string
+          if (typeof message.body === "string") {
+            parsedBody = JSON.parse(message.body);
+          } else {
+            parsedBody = message.body;
+          }
+
+          // Check for HTML content
+          if (
+            parsedBody.body &&
+            typeof parsedBody.body === "string" &&
+            parsedBody.body.trim().startsWith("<")
+          ) {
+            bodyContent = parsedBody.body;
+            isHtmlContent = true;
+          } else if (parsedBody.body) {
+            bodyContent = parsedBody.body;
+            isHtmlContent = false;
+          } else {
+            // If there's no body property, assume the entire parsedBody is the content
+            bodyContent = parsedBody;
+            isHtmlContent = typeof bodyContent === "string" && bodyContent.trim().startsWith("<");
+          }
+
+          if (isHtmlContent) {
+            setHtmlContent(bodyContent);
+            setBody({});
+          } else {
+            setHtmlContent(null);
+            setBody(typeof bodyContent === "string" ? JSON.parse(bodyContent) : bodyContent);
+          }
+
+          // Extract metadata
+          const statusCode = parsedBody?.statusCodes?.[0]?.statusCode || "";
+          const performance = parsedBody?.performance?.responseTimes?.[0]?.timeInMs || "";
+          const size = parsedBody?.contentSizes?.[0]?.sizeInBytes || "";
           setApiMetrics({ status: statusCode, time: performance, size: size });
-          setHeaders(convertHeadersToTableData(data.headers));
-          setError(null); // Clear any previous errors
+
+          // Set headers
+          setHeaders(convertHeadersToTableData(parsedBody.headers || ""));
+          setError(null);
         } catch (error) {
           console.log("error", error);
           setError("Failed to parse response data");
@@ -114,67 +144,28 @@ const Response = () => {
     );
   }
 
-  return (
-    <div className="card" style={{ width: "100%" }}>
-      <TabView>
-        <TabPanel header="Response">
-          <div className="status-info mb-3" style={{ width: "100%" }}>
-            <div
-              className="flex justify-content-between align-items-center"
-              style={{ width: "200px" }}>
-              <p className={classNames("m-0", "text-green-400")}>{apiMetrics.status}</p>
-              <p className={classNames("m-0", "text-gray-400")}>{apiMetrics.time}ms</p>
-              <p className={classNames("m-0", "text-gray-400")}>{apiMetrics.size}B</p>
-            </div>
-            <div className="icon-box">
-              <div className="flex icon-box-toggle">
-                <div
-                  className={classNames("bordered-icon", {
-                    highlighted: highlightedIcon === "code",
-                  })}
-                  onClick={() => toggleIcon("code")}>
-                  <JsonIcon
-                    fill={highlightedIcon === "code" ? "" : "#FFFFFF"}
-                    width="1rem"
-                    height="1rem"
-                  />
-                </div>
-                <div
-                  className={classNames("bordered-icon", {
-                    highlighted: highlightedIcon === "table",
-                  })}
-                  onClick={() => toggleIcon("table")}>
-                  <GridIcon fill="#FFFFFF" width="1rem" height="1rem" />
-                </div>
-              </div>
+  const responseContent = (
+    <>
+      <Metadata {...apiMetrics} />
+      <IconPanel
+        highlightedIcon={highlightedIcon}
+        toggleIcon={toggleIcon}
+        isHtmlContent={!!htmlContent}
+      />
+      <div>{htmlContent ? <HtmlView content={htmlContent} /> : <JsonView data={body} />}</div>
+    </>
+  );
 
-              <div
-                className={classNames("bordered-icon", {
-                  highlighted: highlightedIcon === "clone",
-                })}>
-                <CopyIcon fill="#FFFFFF" width="1.5rem" height="1.5rem" />
-              </div>
-              <div className={classNames({ highlighted: highlightedIcon === "info" })}>
-                <LogsIcon fill="#FFFFFF" width="1rem" height="1rem" />
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <ReactJson src={body} theme={"monokai"} displayDataTypes={false} />
-          </div>
-        </TabPanel>
-        <TabPanel header="Headers">
-          <div className="card">
-            <DataTable value={headers} tableStyle={{ minWidth: "50rem" }}>
-              <Column field="header" header="Header"></Column>
-              <Column field="value" header="Value"></Column>
-            </DataTable>
-          </div>
-        </TabPanel>
-      </TabView>
+  const headersContent = (
+    <div className="card">
+      <DataTable value={headers} tableStyle={{ minWidth: "50rem" }}>
+        <Column field="header" header="Header"></Column>
+        <Column field="value" header="Value"></Column>
+      </DataTable>
     </div>
   );
+
+return <Header responseContent={responseContent} headersContent={headersContent} />;
 };
 
 export default Response;
