@@ -10,49 +10,54 @@
 .icon-box {
     display: flex;
     align-items: center;
-    /* border: 1px solid #ccc; */
-    /* padding: 10px; */
     margin-left: auto;
-    cursor: pointer;
-    /* Push the icons to the right */
 }
 .icon-box-toggle {
     display: flex;
     align-items: center;
-    border: 1px solid #ccc;
+    border: 1px solid #575757;
     /* padding: 10px; */
     margin-left: auto;
     border-radius: 15%;
-    cursor: pointer;
     /* Push the icons to the right */
 }
 
 
 .icon-box i {
-    font-size: 20px;
-    /* Enlarge the icons */
+    font-size: 26px;
+        color: #b5b5b5;
     margin: 3px;
-    /* Space between icons */
     cursor: pointer;
-    /* Make icons clickable */
+}
+
+.icon-box i:hover {
+    color: rgb(255, 255, 255);
+    font-weight: bold;
 }
 
 .icon-box .bordered-icon {
-    /* border-left: 1px solid #ccc;
-    border-right: 1px solid #ccc; */
     padding: 3px;
 }
 
 
 
 .icon-box .highlighted {
-    background-color: #f0f0f0;
+    background-color: #3b3b3b;
     /* Highlight background color */
     border-radius: 4px;
 
     /* Optional: rounded corners */
 }
 
+.bordered-icon.highlighted i {
+    color: rgb(255, 255, 255);
+    font-weight: bold;
+}
+
+.bordered-icon.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
 
 .status-info {
     display: flex;
@@ -93,7 +98,11 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100%;
+    height: 100vh;
+        width: 100vw;
+        position: fixed;
+        top: 0;
+        left: 0;
 }
 
 .error-message {
@@ -101,18 +110,16 @@
     font-size: 16px;
     text-align: center;
 }
-.bordered-icon.highlighted i {
-    color: black;
-}
-
-.bordered-icon.disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
 
 .html-content-container {
     width: 100%;
     height: 100%;
     overflow: auto;
     /* Adjust as needed */
+}
+.meta-icon-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 10px 0;
 }

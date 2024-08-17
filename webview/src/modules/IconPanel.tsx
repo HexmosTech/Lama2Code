@@ -9,7 +9,7 @@ interface IconPanelProps {
 
 const IconPanel: React.FC<IconPanelProps> = ({ highlightedIcon, toggleIcon, isHtmlContent }) => (
   <div className="icon-box">
-    <div className="flex icon-box-toggle">
+    <div className="icon-box-toggle">
       <div
         className={classNames("bordered-icon", {
           highlighted: highlightedIcon === "code",
