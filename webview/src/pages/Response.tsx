@@ -8,6 +8,7 @@ import IconPanel from "@/modules/IconPanel";
 import JsonView from "@/modules/JsonView";
 import HtmlView from "@/modules/HtmlView";
 import Metadata from "@/modules/Metadata";
+import Error from "@/modules/Error";
 
 interface HeaderItem {
   header: string;
@@ -52,12 +53,12 @@ const Response: React.FC = () => {
 
   useEffect(() => {
     const messageListener = (event: MessageEvent) => {
+      setIsLoading(true);
       const message = event.data;
       if (message.command === "update") {
-        console.log("message", message);
+        // console.log("message", message);
 
         if (message.status === "starting") {
-          setIsLoading(true);
           setError(null);
           return;
         }
@@ -106,9 +107,10 @@ const Response: React.FC = () => {
           }
 
           // Extract metadata
-          const statusCode = parsedBody?.statusCodes?.[0]?.statusCode || "";
-          const performance = parsedBody?.performance?.responseTimes?.[0]?.timeInMs || "";
-          const size = parsedBody?.contentSizes?.[0]?.sizeInBytes || "";
+          console.log("parsedBody", parsedBody);
+          const statusCode = parsedBody?.statusCodes?.at(-1)?.statusCode || "";
+          const performance = parsedBody?.performance?.responseTimes?.at(-1)?.timeInMs || "";
+          const size = parsedBody?.contentSizes?.at(-1)?.sizeInBytes || "";
           setApiMetrics({ status: statusCode, time: performance, size: size });
 
           // Set headers
@@ -137,11 +139,7 @@ const Response: React.FC = () => {
   }
 
   if (error) {
-    return (
-      <div className="error-container">
-        <p className="error-message">{error}</p>
-      </div>
-    );
+    return <Error error={error} />;
   }
 
   const responseContent = (
@@ -165,7 +163,7 @@ const Response: React.FC = () => {
     </div>
   );
 
-return <Header responseContent={responseContent} headersContent={headersContent} />;
+  return <Header responseContent={responseContent} headersContent={headersContent} />;
 };
 
 export default Response;

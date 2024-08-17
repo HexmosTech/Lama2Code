@@ -115,19 +115,20 @@ export class Lama2Panel {
 });
     }
 
-    private handleCommandError(errorMessage: string) {
-        console.error('Error executing Lama2 command:', typeof(errorMessage));
-        const parseErrorMatch = errorMessage.match(/Parse Error Error="(.+?)"/);
-        console.log('parseErrorMatch', parseErrorMatch);
-        const errorToSend = parseErrorMatch ? parseErrorMatch[1] : errorMessage;
+   private handleCommandError(errorMessage: string) {
+        
+        // Remove ANSI color codes and other formatting
+        const cleanedMessage = errorMessage.replace(/\u001b\[\d+m/g, '');
+        
+        const parseErrorMatch = cleanedMessage.match(/Parse Error Error="([^"]+)"/);
+        
+        const errorToSend = parseErrorMatch ? parseErrorMatch[1] : cleanedMessage;
 
         this._panel.webview.postMessage({
             command: 'update',
             status: 'error',
-            body: JSON.stringify({ 
-                error: errorToSend
-            })
-        });
+            error: errorToSend
+        }); 
     }
 
     private async onLama2Finish(output: string) {
