@@ -139,17 +139,24 @@ const Response: React.FC = () => {
   }
 
   if (error) {
-    return <Error error={error} />;
+    return (
+      <div className="error-container">
+        <Error error={error} />
+      </div>
+    );
   }
 
   const responseContent = (
     <>
-      <Metadata {...apiMetrics} />
-      <IconPanel
-        highlightedIcon={highlightedIcon}
-        toggleIcon={toggleIcon}
-        isHtmlContent={!!htmlContent}
-      />
+      <div className="meta-icon-section">
+        <Metadata {...apiMetrics} />
+        <IconPanel
+          highlightedIcon={highlightedIcon}
+          toggleIcon={toggleIcon}
+          isHtmlContent={!!htmlContent}
+        />
+      </div>
+
       <div>{htmlContent ? <HtmlView content={htmlContent} /> : <JsonView data={body} />}</div>
     </>
   );
