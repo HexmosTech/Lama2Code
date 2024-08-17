@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
-import ChokiExtension from '../commands/ExecuteCurrentFile/watchFile';
-import { getLama2Command, getShowLama2Term } from '../commands/ExecuteCurrentFile/utils';
+import ChokiExtension from '../utilities/watchFile';
+import { getLama2Command, getShowLama2Term } from '../utilities/utils';
 import { splitLama2Output } from '../commands/ExecuteCurrentFile/parseOut';
 import { getUri } from '../utilities/getUri';
 import { getNonce } from '../utilities/getNonce';

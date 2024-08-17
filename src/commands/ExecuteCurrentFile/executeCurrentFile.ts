@@ -1,11 +1,11 @@
 import * as vscode from "vscode";
-import ChokiExtension from "./watchFile";
+import ChokiExtension from "../../utilities/watchFile";
 var Convert = require("ansi-to-html");
 let fs = require("fs");
 var path = require("path");
 var json2html = require("json2html");
 import splitLama2Output from "./parseOut";
-import { getShowLama2Term } from "./utils";
+import { getShowLama2Term } from "../../utilities/utils";
 // import { MIN_VERSION_TO_CHECK } from "./extension";
 // import { getL2VersionAndUpdatePrompt } from "./checkL2Version";
 
