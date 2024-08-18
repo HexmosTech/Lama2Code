@@ -10,23 +10,34 @@ out/test/**
 
 # Ignore source code
 src/**
+syntaxes/**
 
-# Ignore all webview-ui files except the build directory
-webview-ui/src/**
-webview-ui/public/**
-webview-ui/scripts/**
-webview-ui/index.html
-webview-ui/README.md
-webview-ui/package.json
-webview-ui/package-lock.json
-webview-ui/node_modules/**
+# Ignore all webview files except the build directory
+webview/src/**
+webview/public/**
+webview/scripts/**
+webview/index.html
+webview/README.md
+webview/package.json
+webview/package-lock.json
+webview/node_modules/**
+webview/codicons/**
 
 # Ignore Misc
 .yarnrc
 vsc-extension-quickstart.md
+**/.vsix
 **/.gitignore
 **/tsconfig.json
 **/vite.config.ts
 **/.eslintrc.json
 **/*.map
 **/*.ts
+**/*.gif
+**/*.sh
+**/*.md
+**/*.txt
+banner.png
+.prettierignore
+.prettierrc
+.prettier.config.js
