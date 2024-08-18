@@ -1,0 +1,51 @@
+name: Internal Release
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*-internal'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+
+    - name: Install root dependencies
+      run: npm ci
+
+    - name: Install webview dependencies
+      working-directory: ./webview
+      run: npm ci
+
+    - name: Build webview
+      run: npm run build:webview
+
+    - name: Install vsce
+      run: npm install -g @vscode/vsce
+
+    - name: Package Extension
+      run: vsce package
+
+    - name: Upload VSIX as artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: extension
+        path: "*.vsix"
+
+    - name: Create Internal Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: "*.vsix"
+        prerelease: true
+        name: Internal Release ${{ github.ref_name }}
+        tag_name: ${{ github.ref }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
