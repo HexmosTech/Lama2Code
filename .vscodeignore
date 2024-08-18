@@ -21,7 +21,6 @@ webview/README.md
 webview/package.json
 webview/package-lock.json
 webview/node_modules/**
-webview/codicons/**
 
 # Ignore Misc
 .yarnrc

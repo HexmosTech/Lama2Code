@@ -196,7 +196,7 @@ export class Lama2Panel {
         // The JS file from the React build output
         const scriptUri = getUri(webview, this._extensionUri, ["webview", "build", "assets", "index.js"]);
       
-        const codiconsUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'webview', 'codicons', 'dist', 'codicon.css'));
+        const codiconsUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'webview',  'codicons','dist', 'codicon.css'));
 
         const nonce = getNonce();
 
