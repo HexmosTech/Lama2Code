@@ -24,7 +24,7 @@
 
 
 .icon-box i {
-    font-size: 26px;
+    font-size: 5rem;
         color: #b5b5b5;
     margin: 3px;
     cursor: pointer;
@@ -38,8 +38,6 @@
 .icon-box .bordered-icon {
     padding: 3px;
 }
-
-
 
 .icon-box .highlighted {
     background-color: #3b3b3b;

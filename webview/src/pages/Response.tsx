@@ -21,121 +21,125 @@ interface ApiMetrics {
   size: string;
 }
 
+declare global {
+  interface Window {
+    acquireVsCodeApi: () => any
+  }
+}
+
+const vscode = window.acquireVsCodeApi()
+
 const Response: React.FC = () => {
-  const [highlightedIcon, setHighlightedIcon] = useState<string>("code");
-  const [htmlContent, setHtmlContent] = useState<string | null>(null);
-  const [body, setBody] = useState<object>({});
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [highlightedIcon, setHighlightedIcon] = useState<string>("code")
+  const [htmlContent, setHtmlContent] = useState<string | null>(null)
+  const [body, setBody] = useState<object>({})
+  const [isLoading, setIsLoading] = useState<boolean>(false)
   const [apiMetrics, setApiMetrics] = useState<ApiMetrics>({
     status: "",
     time: "",
     size: "",
-  });
-  const [headers, setHeaders] = useState<HeaderItem[]>([]);
-  const [error, setError] = useState<string | null>(null);
+  })
+  const [headers, setHeaders] = useState<HeaderItem[]>([])
+  const [error, setError] = useState<string | null>(null)
 
   const toggleIcon = (icon: string) => {
-    setHighlightedIcon(icon);
-  };
+    setHighlightedIcon(icon)
+  }
 
   const convertHeadersToTableData = (headersString: string): HeaderItem[] => {
-    const headers = headersString.split("\n");
+    const headers = headersString.split("\n")
     return headers
       .filter((header: string) => header.trim() !== "")
       .map((header) => {
-        const [key, ...valueParts] = header.split(":");
+        const [key, ...valueParts] = header.split(":")
         return {
           header: key.toLowerCase().trim(),
           value: valueParts.join(":").trim(),
-        };
-      });
-  };
+        }
+      })
+  }
 
   useEffect(() => {
     const messageListener = (event: MessageEvent) => {
-      setIsLoading(true);
-      const message = event.data;
+      const message = event.data
       if (message.command === "update") {
         // console.log("message", message);
 
         if (message.status === "starting") {
-          setError(null);
-          return;
+          setIsLoading(true)
+           setError(null)
+           return
         }
 
         if (message.status === "error") {
-          setIsLoading(false);
-          setError(message.error);
-          return;
+          setIsLoading(false)
+          setError(message.error)
+          return
         }
 
         try {
-          let bodyContent;
-          let isHtmlContent = false;
-          let parsedBody;
+          let bodyContent
+          let isHtmlContent = false
+          let parsedBody
 
           // Parse the message body if it's a string
           if (typeof message.body === "string") {
-            parsedBody = JSON.parse(message.body);
+            parsedBody = JSON.parse(message.body)
           } else {
-            parsedBody = message.body;
+            parsedBody = message.body
           }
 
           // Check for HTML content
-          if (
-            parsedBody.body &&
-            typeof parsedBody.body === "string" &&
-            parsedBody.body.trim().startsWith("<")
-          ) {
-            bodyContent = parsedBody.body;
-            isHtmlContent = true;
+          if (parsedBody.body && typeof parsedBody.body === "string" && parsedBody.body.trim().startsWith("<")) {
+            bodyContent = parsedBody.body
+            isHtmlContent = true
           } else if (parsedBody.body) {
-            bodyContent = parsedBody.body;
-            isHtmlContent = false;
+            bodyContent = parsedBody.body
+            isHtmlContent = false
           } else {
             // If there's no body property, assume the entire parsedBody is the content
-            bodyContent = parsedBody;
-            isHtmlContent = typeof bodyContent === "string" && bodyContent.trim().startsWith("<");
+            bodyContent = parsedBody
+            isHtmlContent = typeof bodyContent === "string" && bodyContent.trim().startsWith("<")
           }
 
           if (isHtmlContent) {
-            setHtmlContent(bodyContent);
-            setBody({});
+            setHtmlContent(bodyContent)
+            setBody({})
           } else {
-            setHtmlContent(null);
-            setBody(typeof bodyContent === "string" ? JSON.parse(bodyContent) : bodyContent);
+            setHtmlContent(null)
+            setBody(typeof bodyContent === "string" ? JSON.parse(bodyContent) : bodyContent)
           }
 
           // Extract metadata
-          console.log("parsedBody", parsedBody);
-          const statusCode = parsedBody?.statusCodes?.at(-1)?.statusCode || "";
-          const performance = parsedBody?.performance?.responseTimes?.at(-1)?.timeInMs || "";
-          const size = parsedBody?.contentSizes?.at(-1)?.sizeInBytes || "";
-          setApiMetrics({ status: statusCode, time: performance, size: size });
+          console.log("parsedBody", parsedBody)
+          const statusCode = parsedBody?.statusCodes?.at(-1)?.statusCode || ""
+          const performance = parsedBody?.performance?.responseTimes?.at(-1)?.timeInMs || ""
+          const size = parsedBody?.contentSizes?.at(-1)?.sizeInBytes || ""
+          setApiMetrics({ status: statusCode, time: performance, size: size })
 
           // Set headers
-          setHeaders(convertHeadersToTableData(parsedBody.headers || ""));
-          setError(null);
+          setHeaders(convertHeadersToTableData(parsedBody.headers || ""))
+          setError(null)
         } catch (error) {
-          console.log("error", error);
-          setError("Failed to parse response data");
+          console.log("error", error)
+          setError("Failed to parse response data")
         } finally {
-          setIsLoading(false);
+          setIsLoading(false)
         }
       }
-    };
+    }
 
-    window.addEventListener("message", messageListener);
+    window.addEventListener("message", messageListener)
 
-    return () => window.removeEventListener("message", messageListener);
-  }, []);
+    return () => window.removeEventListener("message", messageListener)
+  }, [])
 
   if (isLoading) {
     return (
       <div className="spinner-container">
         <ProgressSpinner />
       </div>
-    );
+    )
   }
 
   if (error) {
@@ -143,7 +147,11 @@ const Response: React.FC = () => {
       <div className="error-container">
         <Error error={error} />
       </div>
-    );
+    )
+  }
+
+  const toggleTerminal = () => {
+    vscode.postMessage({ command: "toggleTerminal" })
   }
 
   const responseContent = (
@@ -154,12 +162,13 @@ const Response: React.FC = () => {
           highlightedIcon={highlightedIcon}
           toggleIcon={toggleIcon}
           isHtmlContent={!!htmlContent}
+          showTerminal={toggleTerminal}
         />
       </div>
 
       <div>{htmlContent ? <HtmlView content={htmlContent} /> : <JsonView data={body} />}</div>
     </>
-  );
+  )
 
   const headersContent = (
     <div className="card">
@@ -168,9 +177,9 @@ const Response: React.FC = () => {
         <Column field="value" header="Value"></Column>
       </DataTable>
     </div>
-  );
+  )
 
-  return <Header responseContent={responseContent} headersContent={headersContent} />;
-};
+  return <Header responseContent={responseContent} headersContent={headersContent} />
+}
 
 export default Response;

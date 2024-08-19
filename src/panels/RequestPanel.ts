@@ -1,206 +1,203 @@
-import * as vscode from 'vscode';
-import * as path from 'path';
-import ChokiExtension from '../utilities/watchFile';
-import { getLama2Command, getShowLama2Term } from '../utilities/utils';
-import { splitLama2Output } from '../commands/ExecuteCurrentFile/parseOut';
-import { getUri } from '../utilities/getUri';
-import { getNonce } from '../utilities/getNonce';
-import { exec } from 'child_process';
-import * as fs from 'fs';
-
+import * as vscode from "vscode"
+import * as path from "path"
+import ChokiExtension from "../utilities/watchFile"
+import { getLama2Command, getShowLama2Term } from "../utilities/utils"
+import { splitLama2Output } from "../commands/ExecuteCurrentFile/parseOut"
+import { getUri } from "../utilities/getUri"
+import { getNonce } from "../utilities/getNonce"
+import { exec } from "child_process"
+import * as fs from "fs"
 
 export class Lama2Panel {
-    public static currentPanel: Lama2Panel | undefined;
-    private readonly _panel: vscode.WebviewPanel;
-    private readonly _extensionUri: vscode.Uri;
-    private _disposables: vscode.Disposable[] = [];
+  public static currentPanel: Lama2Panel | undefined
+  private readonly _panel: vscode.WebviewPanel
+  private readonly _extensionUri: vscode.Uri
+  private _disposables: vscode.Disposable[] = []
+  private rfile: string = ""
 
-    private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri) {
-        this._panel = panel;
-        this._extensionUri = extensionUri;
+  private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri) {
+    this._panel = panel
+    this._extensionUri = extensionUri
 
-        // Set the webview's initial html content
-        this._update();
+    // Set the webview's initial html content
+    this._update()
 
-        // Listen for when the panel is disposed
-        // This happens when the user closes the panel or when the panel is closed programmatically
-        this._panel.onDidDispose(() => this.dispose(), null, this._disposables);
+    // Listen for when the panel is disposed
+    // This happens when the user closes the panel or when the panel is closed programmatically
+    this._panel.onDidDispose(() => this.dispose(), null, this._disposables)
 
-        // Set the webview's html content
-        this._update();
+    // Set the webview's html content
+    this._update()
 
-        // Set an event listener to listen for messages passed from the webview context
-        this._setWebviewMessageListener(this._panel.webview);
-    }
+    // Set an event listener to listen for messages passed from the webview context
+    this._setWebviewMessageListener(this._panel.webview)
+  }
 
-    public static render(extensionUri: vscode.Uri) {
-        console.log("extensionUri",extensionUri)
-
-        if (Lama2Panel.currentPanel) {
-            // If the webview panel already exists reveal it
-            Lama2Panel.currentPanel._panel.reveal(vscode.ViewColumn.Two);
-        } else {
-            // If a webview panel does not already exist create and show a new one
-            const panel = vscode.window.createWebviewPanel(
-                // Panel view type
-                "showLama2Output",
-                // Panel title
-                "Lama2 Output",
-                // The editor column the panel should be displayed in
-                vscode.ViewColumn.Two,
-                // Extra panel configurations
-                {
-                    // Enable JavaScript in the webview
-                    enableScripts: true,
-                    // Restrict the webview to only load resources from the `out` and `webview-ui/build` directories
-                    localResourceRoots: [
-                        vscode.Uri.joinPath(extensionUri, "out"),
-                        vscode.Uri.joinPath(extensionUri, "webview/build"),
-                        vscode.Uri.joinPath(extensionUri, "webview/codicons/dist"),
-                        vscode.Uri.joinPath(extensionUri, 'media'),
-                        vscode.Uri.joinPath(extensionUri, 'images'),
-                        vscode.Uri.joinPath(extensionUri, 'assets')
-                    ],
-                }
-            );
-
-            Lama2Panel.currentPanel = new Lama2Panel(panel, extensionUri);
+  public static render(extensionUri: vscode.Uri) {
+    if (Lama2Panel.currentPanel) {
+      // If the webview panel already exists reveal it
+      Lama2Panel.currentPanel._panel.reveal(vscode.ViewColumn.Two)
+    } else {
+      // If a webview panel does not already exist create and show a new one
+      const panel = vscode.window.createWebviewPanel(
+        // Panel view type
+        "showLama2Output",
+        // Panel title
+        "Lama2 Output",
+        // The editor column the panel should be displayed in
+        vscode.ViewColumn.Two,
+        // Extra panel configurations
+        {
+          // Enable JavaScript in the webview
+          enableScripts: true,
+          // Restrict the webview to only load resources from the `out` and `webview-ui/build` directories
+          localResourceRoots: [
+            vscode.Uri.joinPath(extensionUri, "out"),
+            vscode.Uri.joinPath(extensionUri, "webview/build"),
+            vscode.Uri.joinPath(extensionUri, "webview/codicons/dist"),
+            vscode.Uri.joinPath(extensionUri, "media"),
+            vscode.Uri.joinPath(extensionUri, "images"),
+            vscode.Uri.joinPath(extensionUri, "assets"),
+          ],
         }
+      )
+
+      Lama2Panel.currentPanel = new Lama2Panel(panel, extensionUri)
     }
+  }
 
-    public async executeLama2Command() {
-        this._panel.webview.postMessage({ 
-            command: 'update',
-            status: 'starting',
-        });
+  public async executeLama2Command() {
+    this._panel.webview.postMessage({
+      command: "update",
+      status: "starting",
+    })
 
-        const { cmd, rflag, rfile } = getLama2Command();
-        console.log("rflag", rflag);
-        console.log("rfile", rfile);
+    const { cmd, rflag, rfile } = getLama2Command()
+    this.rfile = rfile
+    this.setLama2Watch(rflag)
 
-        // Execute command and capture output
-        exec(cmd, (error, stdout, stderr) => {
-        if (stdout) {
-            // Check if stdout is HTML
-            if (stdout.trim().startsWith('<')) {
-                // If it's HTML, call onLama2Finish directly with stdout
-                this.onLama2Finish(stdout);
-                return;
-            }
+    // Execute command and capture output
+    let terminal = getShowLama2Term("AutoLama2")
+    terminal.sendText(cmd, true)
+    let isVisible = false
 
-        // If it's not HTML, proceed with the file check
-        fs.access(rfile, fs.constants.F_OK, (err) => {
-            console.log('Checking if output file exists', err);
-            if (err) {
-                console.log('Output file does not exist');
-                this.handleCommandError("Output file not created");
-            } else {
-                this.onLama2Finish(rfile);
-            }
-        });
-        return;
-    }
-    
-    if (error) {
-        console.error(`exec error: ${error}`);
-        this.handleCommandError(stderr);
-        return;
-    }
+    this._panel.webview.onDidReceiveMessage((message) => {
+      switch (message.command) {
+        case "toggleTerminal":
+          if (isVisible) {
+            terminal.hide()
+            isVisible = false
+          } else {
+            terminal.show()
+            isVisible = true
+          }
+          this._panel.webview.postMessage({ type: "terminalVisibility", isVisible })
+          return
+      }
+    }, undefined)
 
-    if (stderr) {
-        console.error(`stderr: ${stderr}`);
-        this.handleCommandError(stderr);
-        return;
-    }
+    vscode.window.onDidCloseTerminal(t => {
+  if (t.exitStatus && t.exitStatus.code) {
+      vscode.window.showInformationMessage(`Exit code: ${t.exitStatus.code}`);
+  }
 });
-    }
 
-   private handleCommandError(errorMessage: string) {
-        
-        // Remove ANSI color codes and other formatting
-        const cleanedMessage = errorMessage.replace(/\u001b\[\d+m/g, '');
-        
-        const parseErrorMatch = cleanedMessage.match(/Parse Error Error="([^"]+)"/);
-        
-        const errorToSend = parseErrorMatch ? parseErrorMatch[1] : cleanedMessage;
+
+  }
+
+  private setLama2Watch(rflag: string) {
+    let c = new ChokiExtension()
+    c.pathAddTrigger(rflag, this.onLama2Finish, this)
+  }
+  
+
+  private handleCommandError(errorMessage: string) {
+    // Remove ANSI color codes and other formatting
+    const cleanedMessage = errorMessage.replace(/\u001b\[\d+m/g, "")
+
+    const parseErrorMatch = cleanedMessage.match(/Parse Error Error="([^"]+)"/)
+
+    const errorToSend = parseErrorMatch ? parseErrorMatch[1] : cleanedMessage
+
+    this._panel.webview.postMessage({
+      command: "update",
+      status: "error",
+      error: errorToSend,
+    })
+  }
+
+  private async onLama2Finish(output: string) {
+    try {
+      output = this.rfile
+      if (typeof output === "string" && output.trim().startsWith("<")) {
+        console.log("outputFile", output)
 
         this._panel.webview.postMessage({
-            command: 'update',
-            status: 'error',
-            error: errorToSend
-        }); 
-    }
+          command: "update",
+          status: "finished",
+          body: { body: output },
+          lama2Log: "",
+          httpHead: "",
+        })
+      } else {
+        const content = await vscode.workspace.fs.readFile(vscode.Uri.file(output))
+        const [lama2Log, httpHead, body] = splitLama2Output(content.toString())
 
-    private async onLama2Finish(output: string) {
-        try {
-            if (typeof output === 'string' && output.trim().startsWith('<')) { 
-                console.log("outputFile",output)
+        // Check if the body is valid JSON
+        JSON.parse(body) // This will throw an error if body is not valid JSON
 
-
-                 this._panel.webview.postMessage({ 
-                    command: 'update',
-                    status: 'finished',
-                     body: { body: output },
-                    lama2Log: '',
-                    httpHead: ''
-                });
-            }
-            else {
-                const content = await vscode.workspace.fs.readFile(vscode.Uri.file(output));
-                const [lama2Log, httpHead, body] = splitLama2Output(content.toString());
-
-                // Check if the body is valid JSON
-                JSON.parse(body); // This will throw an error if body is not valid JSON
-
-                // Send data to webview
-                this._panel.webview.postMessage({ 
-                    command: 'update',
-                    status: 'finished',
-                    lama2Log,
-                    httpHead,
-                    body
-                });
+        // Send data to webview
+        this._panel.webview.postMessage({
+          command: "update",
+          status: "finished",
+          lama2Log,
+          httpHead,
+          body,
+        })
 
         // Clean up temporary files
-        await vscode.workspace.fs.delete(vscode.Uri.file(output));
-        }
-        
+        await vscode.workspace.fs.delete(vscode.Uri.file(output))
+      }
     } catch (error) {
-        console.error('Error processing Lama2 output:', error);
-        this.handleCommandError(error instanceof Error ? error.message : 'An error occurred while processing the Lama2 output');
+      console.error("Error processing Lama2 output:", error)
+      this.handleCommandError(
+        error instanceof Error ? error.message : "An error occurred while processing the Lama2 output"
+      )
     }
-}
+  }
 
-    public dispose() {
-        Lama2Panel.currentPanel = undefined;
+  public dispose() {
+    Lama2Panel.currentPanel = undefined
 
-        // Clean up our resources
-        this._panel.dispose();
+    // Clean up our resources
+    this._panel.dispose()
 
-        while (this._disposables.length) {
-            const x = this._disposables.pop();
-            if (x) {
-                x.dispose();
-            }
-        }
+    while (this._disposables.length) {
+      const x = this._disposables.pop()
+      if (x) {
+        x.dispose()
+      }
     }
+  }
 
-    private _update() {
-        const webview = this._panel.webview;
-        this._panel.webview.html = this._getHtmlForWebview(webview);
-    }
+  private _update() {
+    const webview = this._panel.webview
+    this._panel.webview.html = this._getHtmlForWebview(webview)
+  }
 
-    private _getHtmlForWebview(webview: vscode.Webview) {
-        // The CSS file from the React build output
-        const stylesUri = getUri(webview, this._extensionUri, ["webview", "build", "assets", "index.css"]);
-        // The JS file from the React build output
-        const scriptUri = getUri(webview, this._extensionUri, ["webview", "build", "assets", "index.js"]);
-      
-        const codiconsUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'webview',  'codicons','dist', 'codicon.css'));
+  private _getHtmlForWebview(webview: vscode.Webview) {
+    // The CSS file from the React build output
+    const stylesUri = getUri(webview, this._extensionUri, ["webview", "build", "assets", "index.css"])
+    // The JS file from the React build output
+    const scriptUri = getUri(webview, this._extensionUri, ["webview", "build", "assets", "index.js"])
 
-        const nonce = getNonce();
+    const codiconsUri = webview.asWebviewUri(
+      vscode.Uri.joinPath(this._extensionUri, "webview", "codicons", "dist", "codicon.css")
+    )
 
-        return /*html*/ `
+    const nonce = getNonce()
+
+    return /*html*/ `
       <!DOCTYPE html>
         <html lang="en">
         <head>
@@ -216,20 +213,72 @@ export class Lama2Panel {
             <script type="module" nonce="${nonce}" src="${scriptUri}"></script>
         </body>
         </html>
-    `;
-    }
+    `
+  }
 
-    private _setWebviewMessageListener(webview: vscode.Webview) {
-        webview.onDidReceiveMessage(
-            (message: any) => {
-                switch (message.command) {
-                    case 'alert':
-                        vscode.window.showErrorMessage(message.text);
-                        return;
-                }
-            },
-            undefined,
-            this._disposables
-        );
-    }
+  private _setWebviewMessageListener(webview: vscode.Webview) {
+    webview.onDidReceiveMessage(
+      (message: any) => {
+        switch (message.command) {
+          case "alert":
+            vscode.window.showErrorMessage(message.text)
+            return
+        }
+      },
+      undefined,
+      this._disposables
+    )
+  }
 }
+
+    // fs.access(rfile, fs.constants.F_OK, (err) => {
+    //         console.log('Checking if output file exists', err);
+    //         if (err) {
+    //             console.log('Output file does not exist');
+    //             this.handleCommandError("Output file not created");
+    //         } else {
+    //             this.onLama2Finish(rfile);
+    //         }
+    //         });
+    //         return;
+
+    //    exec(cmd, (error, stdout, stderr) => {
+    //         console.log('exec', cmd)
+    //         console.log('stdout', stdout)
+    //         console.log('stderr', stderr)
+
+    //         // Send the command to the terminal
+
+    //         if (stdout) {
+    //             // Check if stdout is HTML
+    //             if (stdout.trim().startsWith('<')) {
+    //             // If it's HTML, call onLama2Finish directly with stdout
+    //             this.onLama2Finish(stdout);
+    //             return;
+    //             }
+
+    //             // If it's not HTML, proceed with the file check
+    //             fs.access(rfile, fs.constants.F_OK, (err) => {
+    //             console.log('Checking if output file exists', err);
+    //             if (err) {
+    //                 console.log('Output file does not exist');
+    //                 this.handleCommandError("Output file not created");
+    //             } else {
+    //                 this.onLama2Finish(rfile);
+    //             }
+    //             });
+    //             return;
+    //         }
+
+    //         if (error) {
+    //             console.error(`exec error: ${error}`);
+    //             this.handleCommandError(stderr);
+    //             return;
+    //         }
+
+    //         if (stderr) {
+    //             console.error(`stderr: ${stderr}`);
+    //             this.handleCommandError(stderr);
+    //             return;
+    //         }
+    //         });
