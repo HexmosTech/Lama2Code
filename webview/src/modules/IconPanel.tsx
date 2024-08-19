@@ -2,12 +2,13 @@ import React from "react";
 import { classNames } from "primereact/utils";
 
 interface IconPanelProps {
-  highlightedIcon: string;
-  toggleIcon: (icon: string) => void;
-  isHtmlContent: boolean;
+  highlightedIcon: string
+  toggleIcon: (icon: string) => void
+  isHtmlContent: boolean
+  showTerminal: () => void
 }
 
-const IconPanel: React.FC<IconPanelProps> = ({ highlightedIcon, toggleIcon, isHtmlContent }) => (
+const IconPanel: React.FC<IconPanelProps> = ({ highlightedIcon, toggleIcon, isHtmlContent, showTerminal }) => (
   <div className="icon-box">
     <div className="icon-box-toggle">
       <div
@@ -30,7 +31,10 @@ const IconPanel: React.FC<IconPanelProps> = ({ highlightedIcon, toggleIcon, isHt
     <div className="bordered-icon">
       <i className="codicon codicon-copy"></i>
     </div>
+    <div className="bordered-icon" onClick={showTerminal}>
+      <i className="codicon codicon-debug-console"></i>
+    </div>
   </div>
-);
+)
 
 export default IconPanel;

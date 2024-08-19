@@ -28,7 +28,6 @@ export function getShowLama2Term(name: string): CustomTerminal {
   let terminal = findOrCreateTerminal(name);
   // Clear terminal and send Ctrl+C before showing
   terminal.sendText("\x03");
-  // terminal.show();
   return terminal;
 }
 
