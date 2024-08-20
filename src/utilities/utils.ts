@@ -60,6 +60,7 @@ export function getLama2Command() {
         }
         randomNameFlag = `${windowsBasePath}\\${randomNameBase}.flag`;
         randomNameFile = `${windowsBasePath}\\${randomNameBase}.json`;
+        randomNameLog = `${windowsBasePath}\\${randomNameBase}.log`;
         cmd = `powershell l2 -o ${randomNameFile} ${currentFilePath}; New-Item -Path ${randomNameFlag}`;
     } else {
         randomNameFlag = `/tmp/${randomNameBase}.flag`;

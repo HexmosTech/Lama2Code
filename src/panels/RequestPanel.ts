@@ -73,10 +73,17 @@ export class Lama2Panel {
       status: "starting",
     })
 
-    const { cmd, rflag, rfile, rlog } = getLama2Command()
-    this.rfile = rfile
-    this.rlog = rlog
-    this.setLama2Watch(rflag)
+    const lama2Command = getLama2Command();
+    if (!lama2Command) {
+      console.error("Failed to generate Lama2 command");
+    return;
+    }
+
+     const { cmd, rflag, rfile, rlog } = lama2Command;
+      this.rfile = rfile;
+      this.rlog = rlog;
+      this.setLama2Watch(rflag);
+
 
     // Execute command and capture output
     let terminal = getShowLama2Term("AutoLama2")
@@ -86,6 +93,7 @@ export class Lama2Panel {
     this._panel.webview.onDidReceiveMessage((message) => {
       switch (message.command) {
         case "toggleTerminal":
+          console.log("isVisble", isVisible)
           if (isVisible) {
             terminal.hide()
             isVisible = false
