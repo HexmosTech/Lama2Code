@@ -9,16 +9,17 @@ import JsonView from "@/modules/JsonView";
 import HtmlView from "@/modules/HtmlView";
 import Metadata from "@/modules/Metadata";
 import Error from "@/modules/Error";
+import { Button } from "primereact/button"
 
 interface HeaderItem {
-  header: string;
-  value: string;
+  header: string
+  value: string
 }
 
 interface ApiMetrics {
-  status: string;
-  time: string;
-  size: string;
+  status: string
+  time: string
+  size: string
 }
 
 declare global {
@@ -41,6 +42,7 @@ const Response: React.FC = () => {
   })
   const [headers, setHeaders] = useState<HeaderItem[]>([])
   const [error, setError] = useState<string | null>(null)
+  const [showTerminal, setShowTerminal] = useState<boolean>(false)
 
   const toggleIcon = (icon: string) => {
     setHighlightedIcon(icon)
@@ -67,8 +69,8 @@ const Response: React.FC = () => {
 
         if (message.status === "starting") {
           setIsLoading(true)
-           setError(null)
-           return
+          setError(null)
+          return
         }
 
         if (message.status === "error") {
@@ -142,16 +144,18 @@ const Response: React.FC = () => {
     )
   }
 
+  const toggleTerminal = () => {
+    vscode.postMessage({ command: "toggleTerminal" })
+    setShowTerminal(!showTerminal)
+  }
+
   if (error) {
     return (
       <div className="error-container">
         <Error error={error} />
+        <Button label={showTerminal ? "Hide Terminal" : "Show Terminal"} onClick={toggleTerminal} />
       </div>
     )
-  }
-
-  const toggleTerminal = () => {
-    vscode.postMessage({ command: "toggleTerminal" })
   }
 
   const responseContent = (

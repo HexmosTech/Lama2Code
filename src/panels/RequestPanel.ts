@@ -14,6 +14,7 @@ export class Lama2Panel {
   private readonly _extensionUri: vscode.Uri
   private _disposables: vscode.Disposable[] = []
   private rfile: string = ""
+  private rlog: string = ""
 
   private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri) {
     this._panel = panel
@@ -72,8 +73,9 @@ export class Lama2Panel {
       status: "starting",
     })
 
-    const { cmd, rflag, rfile } = getLama2Command()
+    const { cmd, rflag, rfile, rlog } = getLama2Command()
     this.rfile = rfile
+    this.rlog = rlog
     this.setLama2Watch(rflag)
 
     // Execute command and capture output
@@ -159,9 +161,12 @@ export class Lama2Panel {
         await vscode.workspace.fs.delete(vscode.Uri.file(output))
       }
     } catch (error) {
-      console.error("Error processing Lama2 output:", error)
+      console.log(this.rlog)
+       const stderr = await vscode.workspace.fs.readFile(vscode.Uri.file(this.rlog));
+    const stderrString = new TextDecoder().decode(stderr);
+    console.error("Error processing Lama2 output:", stderrString);
       this.handleCommandError(
-        error instanceof Error ? error.message : "An error occurred while processing the Lama2 output"
+        error instanceof Error ? stderrString : "An error occurred while processing the Lama2 output"
       )
     }
   }

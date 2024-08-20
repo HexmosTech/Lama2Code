@@ -48,6 +48,7 @@ export function getLama2Command() {
     console.log('getLama2Command');
     let randomNameFile: string | null = null;
     let randomNameFlag: string | null = null;
+    let randomNameLog: string | null = null;
     let cmd: string | null = null;
     const windowsBasePath = 'C:\\ProgramData\\.lama2';
     const randomNameBase = generateRandomName(8);
@@ -63,18 +64,18 @@ export function getLama2Command() {
     } else {
         randomNameFlag = `/tmp/${randomNameBase}.flag`;
         randomNameFile = `/tmp/${randomNameBase}.json`;
-        cmd = `l2 -o ${randomNameFile} ${currentFilePath}; touch ${randomNameFlag}`;
+        randomNameLog = `/tmp/${randomNameBase}.log`;
+        cmd = `l2 -o ${randomNameFile} ${currentFilePath} 2> >(tee ${randomNameLog}); touch ${randomNameFlag}`;
     }
 
     return {
         cmd: cmd,
         rflag: randomNameFlag,
         rfile: randomNameFile,
+        rlog: randomNameLog
     };
+  } catch (error) {
+    console.error('Error generating Lama2 command:', error);
+    return null;
   }
-  catch (error) {
-    console.error('Failed to generate Lama2 command', error);
-    throw new Error('Failed to generate Lama2 command');
-  }
-    
 }

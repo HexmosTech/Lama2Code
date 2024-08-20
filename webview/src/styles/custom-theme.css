@@ -94,7 +94,9 @@
 
 .error-container {
     display: flex;
+    flex-direction: column;
     justify-content: center;
+    gap: 10px;
     align-items: center;
     width: 100vw;
         position: fixed;
