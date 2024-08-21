@@ -157,22 +157,29 @@ const Response: React.FC = () => {
       </div>
     )
   }
+ const copyContent = () => {
+   const copyBody = htmlContent || JSON.stringify(body, null, 2)
+   navigator.clipboard.writeText(copyBody).then(() => {
+     vscode.postMessage({ command: "showNotification", text: "Copied to clipboard" })
+   })
+ }
 
-  const responseContent = (
-    <>
-      <div className="meta-icon-section">
-        <Metadata {...apiMetrics} />
-        <IconPanel
-          highlightedIcon={highlightedIcon}
-          toggleIcon={toggleIcon}
-          isHtmlContent={!!htmlContent}
-          showTerminal={toggleTerminal}
-        />
-      </div>
+ const responseContent = (
+   <>
+     <div className="meta-icon-section">
+       <Metadata {...apiMetrics} />
+       <IconPanel
+         highlightedIcon={highlightedIcon}
+         toggleIcon={toggleIcon}
+         isHtmlContent={!!htmlContent}
+         showTerminal={toggleTerminal}
+         copyContent={copyContent}
+       />
+     </div>
 
-      <div>{htmlContent ? <HtmlView content={htmlContent} /> : <JsonView data={body} />}</div>
-    </>
-  )
+     <div>{htmlContent ? <HtmlView content={htmlContent} /> : <JsonView data={body} />}</div>
+   </>
+ )
 
   const headersContent = (
     <div className="card">
