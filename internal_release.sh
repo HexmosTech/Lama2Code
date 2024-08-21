@@ -10,6 +10,32 @@ NC='\033[0m' # No Color
 REPO_OWNER="HexmosTech"
 REPO_NAME_CORE="Lama2"
 REPO_NAME_EXTENSION="Lama2Code"
+
+# Function to determine OS and architecture
+get_platform() {
+    architecture=""
+    case $(uname -m) in
+    i386 | i686) architecture="386" ;;
+    x86_64) architecture="amd64" ;;
+    arm) dpkg --print-architecture | grep -q "arm64" && architecture="arm64" || architecture="arm" ;;
+    arm64) architecture="arm64" ;;
+    *) echo -e "${RED}Unsupported architecture: $(uname -m)${NC}"; exit 1 ;;
+    esac
+}
+
+get_os() {
+    the_os=""
+    case "$OSTYPE" in
+    linux-gnu*) the_os="linux" ;;
+    darwin*) the_os="darwin" ;;
+    cygwin | msys | win32 | freebsd*)
+        echo -e "${RED}Installer not supported on this OS; please use release binary${NC}"
+        exit 1
+        ;;
+    *) echo -e "${RED}Unknown OS: $OSTYPE${NC}"; exit 1 ;;
+    esac
+}
+
 # Function to download and install the Lama2 binary
 download_and_install_l2() {
     # Fetch the latest pre-release information
@@ -21,18 +47,21 @@ download_and_install_l2() {
         exit 1
     fi
 
-    # Extract the binary download URL
-    BINARY_URL=$(echo "$RELEASE_INFO" | jq -r '.assets[] | select(.name | endswith("l2")) | .browser_download_url')
-    TAG_NAME=$(echo "$RELEASE_INFO" | jq -r '.tag_name')
+    # Determine platform
+    get_platform
+    get_os
+
+    # Extract the binary download URL for the specific platform
+    BINARY_URL=$(echo "$RELEASE_INFO" | jq -r --arg os "$the_os" --arg arch "$architecture" '.assets[] | select(.name | endswith($os + "-" + $arch + ".tar.gz")) | .browser_download_url')
 
     if [ -z "$BINARY_URL" ] || [ "$BINARY_URL" = "null" ]; then
-        echo -e "${RED}No binary file found in the latest pre-release${NC}"
+        echo -e "${RED}No binary file found for ${the_os}-${architecture} in the latest pre-release${NC}"
         exit 1
     fi
 
     echo -e "${GREEN}Downloading l2 binary from $BINARY_URL${NC}"
-    curl -L -o /tmp/l2 "$BINARY_URL"
-    
+    wget -O /tmp/l2_latest.tar.gz "$BINARY_URL"
+    tar -xvzf /tmp/l2_latest.tar.gz -C /tmp
     sudo mv /tmp/l2 /usr/local/bin/l2
     sudo chmod +x /usr/local/bin/l2
 }
