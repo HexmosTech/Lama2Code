@@ -6,9 +6,16 @@ interface IconPanelProps {
   toggleIcon: (icon: string) => void
   isHtmlContent: boolean
   showTerminal: () => void
+  copyContent: () => void
 }
 
-const IconPanel: React.FC<IconPanelProps> = ({ highlightedIcon, toggleIcon, isHtmlContent, showTerminal }) => (
+const IconPanel: React.FC<IconPanelProps> = ({
+  highlightedIcon,
+  toggleIcon,
+  isHtmlContent,
+  showTerminal,
+  copyContent,
+}) => (
   <div className="icon-box">
     <div className="icon-box-toggle">
       <div
@@ -28,7 +35,7 @@ const IconPanel: React.FC<IconPanelProps> = ({ highlightedIcon, toggleIcon, isHt
         <i className="codicon codicon-table"></i>
       </div>
     </div>
-    <div className="bordered-icon">
+    <div className="bordered-icon" onClick={copyContent}>
       <i className="codicon codicon-copy"></i>
     </div>
     <div className="bordered-icon" onClick={showTerminal}>

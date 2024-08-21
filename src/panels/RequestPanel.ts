@@ -236,6 +236,9 @@ export class Lama2Panel {
           case "alert":
             vscode.window.showErrorMessage(message.text)
             return
+          case 'showNotification':
+          vscode.window.showInformationMessage(message.text);
+          break;
         }
       },
       undefined,
