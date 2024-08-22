@@ -10,7 +10,6 @@ out/test/**
 
 # Ignore source code
 src/**
-syntaxes/**
 
 # Ignore all webview files except the build directory
 webview/src/**
