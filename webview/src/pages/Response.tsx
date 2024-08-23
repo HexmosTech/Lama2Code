@@ -64,6 +64,7 @@ const Response: React.FC = () => {
   useEffect(() => {
     const messageListener = (event: MessageEvent) => {
       const message = event.data
+      console.log("message", message)
       if (message.command === "update") {
         // console.log("message", message);
 
@@ -71,9 +72,7 @@ const Response: React.FC = () => {
           setIsLoading(true)
           setError(null)
           return
-        }
-
-        if (message.status === "error") {
+        } else if (message.status === "error") {
           setIsLoading(false)
           setError(message.error)
           return
@@ -128,6 +127,8 @@ const Response: React.FC = () => {
         } finally {
           setIsLoading(false)
         }
+      } else {
+        console.log("Unknown command", message)
       }
     }
 
