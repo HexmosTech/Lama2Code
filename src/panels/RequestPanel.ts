@@ -37,8 +37,10 @@ export class Lama2Panel {
   public static render(extensionUri: vscode.Uri) {
     if (Lama2Panel.currentPanel) {
       // If the webview panel already exists reveal it
-      Lama2Panel.currentPanel._panel.reveal(vscode.ViewColumn.Two)
+      console.log("revealing existing panel")
+      Lama2Panel.currentPanel._panel.reveal(vscode.ViewColumn.Two, true)
     } else {
+      console.log("opening new panel")
       // If a webview panel does not already exist create and show a new one
       const panel = vscode.window.createWebviewPanel(
         // Panel view type
@@ -46,10 +48,13 @@ export class Lama2Panel {
         // Panel title
         "Lama2 Output",
         // The editor column the panel should be displayed in
-        vscode.ViewColumn.Two,
+        
+        { preserveFocus: true, viewColumn: vscode.ViewColumn.Two },
+        
         // Extra panel configurations
         {
           // Enable JavaScript in the webview
+          
           enableScripts: true,
           // Restrict the webview to only load resources from the `out` and `webview-ui/build` directories
           localResourceRoots: [
@@ -68,58 +73,58 @@ export class Lama2Panel {
   }
 
   public async executeLama2Command() {
-    this._panel.webview.postMessage({
-      command: "update",
-      status: "starting",
-    })
+    try {
+      this._panel.webview.postMessage({
+        command: "update",
+        status: "starting",
+      })
 
-    const lama2Command = getLama2Command();
-    if (!lama2Command) {
-      console.error("Failed to generate Lama2 command");
-    return;
-    }
-
-     const { cmd, rflag, rfile, rlog } = lama2Command;
-      this.rfile = rfile;
-      this.rlog = rlog;
-      this.setLama2Watch(rflag);
-
-
-    // Execute command and capture output
-    let terminal = getShowLama2Term("AutoLama2")
-    terminal.sendText(cmd, true)
-    let isVisible = false
-
-    this._panel.webview.onDidReceiveMessage((message) => {
-      switch (message.command) {
-        case "toggleTerminal":
-          console.log("isVisble", isVisible)
-          if (isVisible) {
-            terminal.hide()
-            isVisible = false
-          } else {
-            terminal.show()
-            isVisible = true
-          }
-          this._panel.webview.postMessage({ type: "terminalVisibility", isVisible })
-          return
+      const lama2Command = getLama2Command()
+      if (!lama2Command) {
+        console.error("Failed to generate Lama2 command")
+        return
       }
-    }, undefined)
 
-    vscode.window.onDidCloseTerminal(t => {
-  if (t.exitStatus && t.exitStatus.code) {
-      vscode.window.showInformationMessage(`Exit code: ${t.exitStatus.code}`);
-  }
-});
+      const { cmd, rflag, rfile, rlog } = lama2Command
+      this.rfile = rfile
+      this.rlog = rlog
+      this.setLama2Watch(rflag)
 
+      // Execute command and capture output
+      let terminal = getShowLama2Term("AutoLama2")
+      terminal.sendText(cmd, true)
+      let isVisible = false
 
+      this._panel.webview.onDidReceiveMessage((message) => {
+        switch (message.command) {
+          case "toggleTerminal":
+            console.log("isVisble", isVisible)
+            if (isVisible) {
+              terminal.hide()
+              isVisible = false
+            } else {
+              terminal.show()
+              isVisible = true
+            }
+            this._panel.webview.postMessage({ type: "terminalVisibility", isVisible })
+            return
+        }
+      }, undefined)
+
+      vscode.window.onDidCloseTerminal((t) => {
+        if (t.exitStatus && t.exitStatus.code) {
+          vscode.window.showInformationMessage(`Exit code: ${t.exitStatus.code}`)
+        }
+      })
+    } catch (error) {
+      console.error("Error executing Lama2 command:", error)
+    }
   }
 
   private setLama2Watch(rflag: string) {
     let c = new ChokiExtension()
     c.pathAddTrigger(rflag, this.onLama2Finish, this)
   }
-  
 
   private handleCommandError(errorMessage: string) {
     // Remove ANSI color codes and other formatting
@@ -170,9 +175,9 @@ export class Lama2Panel {
       }
     } catch (error) {
       console.log(this.rlog)
-       const stderr = await vscode.workspace.fs.readFile(vscode.Uri.file(this.rlog));
-    const stderrString = new TextDecoder().decode(stderr);
-    console.error("Error processing Lama2 output:", stderrString);
+      const stderr = await vscode.workspace.fs.readFile(vscode.Uri.file(this.rlog))
+      const stderrString = new TextDecoder().decode(stderr)
+      console.error("Error processing Lama2 output:", stderrString)
       this.handleCommandError(
         error instanceof Error ? stderrString : "An error occurred while processing the Lama2 output"
       )
@@ -236,9 +241,9 @@ export class Lama2Panel {
           case "alert":
             vscode.window.showErrorMessage(message.text)
             return
-          case 'showNotification':
-          vscode.window.showInformationMessage(message.text);
-          break;
+          case "showNotification":
+            vscode.window.showInformationMessage(message.text)
+            break
         }
       },
       undefined,
@@ -247,54 +252,54 @@ export class Lama2Panel {
   }
 }
 
-    // fs.access(rfile, fs.constants.F_OK, (err) => {
-    //         console.log('Checking if output file exists', err);
-    //         if (err) {
-    //             console.log('Output file does not exist');
-    //             this.handleCommandError("Output file not created");
-    //         } else {
-    //             this.onLama2Finish(rfile);
-    //         }
-    //         });
-    //         return;
+// fs.access(rfile, fs.constants.F_OK, (err) => {
+//         console.log('Checking if output file exists', err);
+//         if (err) {
+//             console.log('Output file does not exist');
+//             this.handleCommandError("Output file not created");
+//         } else {
+//             this.onLama2Finish(rfile);
+//         }
+//         });
+//         return;
 
-    //    exec(cmd, (error, stdout, stderr) => {
-    //         console.log('exec', cmd)
-    //         console.log('stdout', stdout)
-    //         console.log('stderr', stderr)
+//    exec(cmd, (error, stdout, stderr) => {
+//         console.log('exec', cmd)
+//         console.log('stdout', stdout)
+//         console.log('stderr', stderr)
 
-    //         // Send the command to the terminal
+//         // Send the command to the terminal
 
-    //         if (stdout) {
-    //             // Check if stdout is HTML
-    //             if (stdout.trim().startsWith('<')) {
-    //             // If it's HTML, call onLama2Finish directly with stdout
-    //             this.onLama2Finish(stdout);
-    //             return;
-    //             }
+//         if (stdout) {
+//             // Check if stdout is HTML
+//             if (stdout.trim().startsWith('<')) {
+//             // If it's HTML, call onLama2Finish directly with stdout
+//             this.onLama2Finish(stdout);
+//             return;
+//             }
 
-    //             // If it's not HTML, proceed with the file check
-    //             fs.access(rfile, fs.constants.F_OK, (err) => {
-    //             console.log('Checking if output file exists', err);
-    //             if (err) {
-    //                 console.log('Output file does not exist');
-    //                 this.handleCommandError("Output file not created");
-    //             } else {
-    //                 this.onLama2Finish(rfile);
-    //             }
-    //             });
-    //             return;
-    //         }
+//             // If it's not HTML, proceed with the file check
+//             fs.access(rfile, fs.constants.F_OK, (err) => {
+//             console.log('Checking if output file exists', err);
+//             if (err) {
+//                 console.log('Output file does not exist');
+//                 this.handleCommandError("Output file not created");
+//             } else {
+//                 this.onLama2Finish(rfile);
+//             }
+//             });
+//             return;
+//         }
 
-    //         if (error) {
-    //             console.error(`exec error: ${error}`);
-    //             this.handleCommandError(stderr);
-    //             return;
-    //         }
+//         if (error) {
+//             console.error(`exec error: ${error}`);
+//             this.handleCommandError(stderr);
+//             return;
+//         }
 
-    //         if (stderr) {
-    //             console.error(`stderr: ${stderr}`);
-    //             this.handleCommandError(stderr);
-    //             return;
-    //         }
-    //         });
+//         if (stderr) {
+//             console.error(`stderr: ${stderr}`);
+//             this.handleCommandError(stderr);
+//             return;
+//         }
+//         });
