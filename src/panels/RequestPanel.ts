@@ -15,6 +15,7 @@ export class Lama2Panel {
   private _disposables: vscode.Disposable[] = []
   private rfile: string = ""
   private rlog: string = ""
+  private terminal: vscode.Terminal | undefined
 
   private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri) {
     this._panel = panel
@@ -49,6 +50,7 @@ export class Lama2Panel {
         "Lama2 Output",
         // The editor column the panel should be displayed in
         
+        // { preserveFocus: true, viewColumn: vscode.ViewColumn.Two },
         { preserveFocus: true, viewColumn: vscode.ViewColumn.Two },
         
         // Extra panel configurations
@@ -91,35 +93,15 @@ export class Lama2Panel {
       this.setLama2Watch(rflag)
 
       // Execute command and capture output
-      let terminal = getShowLama2Term("AutoLama2")
-      terminal.sendText(cmd, true)
-      let isVisible = false
-
-      this._panel.webview.onDidReceiveMessage((message) => {
-        switch (message.command) {
-          case "toggleTerminal":
-            console.log("isVisble", isVisible)
-            if (isVisible) {
-              terminal.hide()
-              isVisible = false
-            } else {
-              terminal.show()
-              isVisible = true
-            }
-            this._panel.webview.postMessage({ type: "terminalVisibility", isVisible })
-            return
-        }
-      }, undefined)
-
-      vscode.window.onDidCloseTerminal((t) => {
-        if (t.exitStatus && t.exitStatus.code) {
-          vscode.window.showInformationMessage(`Exit code: ${t.exitStatus.code}`)
-        }
-      })
-    } catch (error) {
+      this.terminal = getShowLama2Term("AutoLama2")
+      this.terminal.sendText(cmd, true)
+      console.log("terminal", this.terminal.name)
+    }
+    catch (error) {
       console.error("Error executing Lama2 command:", error)
     }
   }
+
 
   private setLama2Watch(rflag: string) {
     let c = new ChokiExtension()
@@ -237,6 +219,7 @@ export class Lama2Panel {
   private _setWebviewMessageListener(webview: vscode.Webview) {
     webview.onDidReceiveMessage(
       (message: any) => {
+        console.log("message", message)
         switch (message.command) {
           case "alert":
             vscode.window.showErrorMessage(message.text)
@@ -244,62 +227,116 @@ export class Lama2Panel {
           case "showNotification":
             vscode.window.showInformationMessage(message.text)
             break
+          case "toggleTerminal":
+            this.toggleTerminal()
+            return
         }
       },
       undefined,
       this._disposables
     )
   }
+
+
+  // private async toggleTerminal() {
+  //   const activeTerminal = vscode.window.activeTerminal;
+  //   console.log("activeTerminal", activeTerminal?.name)
+  //   const terminals = vscode.window.terminals;
+
+  //   await vscode.commands.executeCommand('workbench.action.terminal.toggleTerminal');
+
+  //   // if (activeTerminal && activeTerminal.name === "AutoLama2") {
+  //   //   // If AutoLama2 terminal is active, hide it
+  //   //   console.log("hide terminal", activeTerminal)
+  //   //   await vscode.commands.executeCommand('workbench.action.terminal.toggleTerminal');
+  //   //   await vscode.commands.executeCommand('workbench.action.terminal.focus')
+
+  //   // } else {
+  //   //   // If AutoLama2 terminal is not active or no terminal is active, show it
+
+  //   //   if (this.terminal) {
+  //   //     console.log("show terminal", this.terminal)
+  //   //     this.terminal.show(true); // false means don't focus the terminal
+  //   //   } else {
+  //   //     console.log("show terminal", this.terminal)
+  //   //     // If no AutoLama2 terminal exists, just toggle the terminal panel
+  //   //     await vscode.commands.executeCommand('workbench.action.terminal.toggleTerminal');
+  //   //   }
+  //   // }
+  // }
+
+
+  private async toggleTerminal() {
+    const isTerminalVisible = vscode.window.terminals.length > 0;
+    console.log("isTerminalVisible", isTerminalVisible)
+    const terminalFocused = vscode.window.activeTerminal
+    console.log("terminalFocused", terminalFocused)
+    console.log(terminalFocused?.name)
+
+    // const isVisible = await this.isPanelVisible();
+    // console.log("isVisible", isVisible)
+
+    // const focusedPanel = await this.getFocusedPanelName();
+    // if (focusedPanel) {
+    //   console.log(`The focused panel is: ${focusedPanel}`);
+    // } else {
+    //   console.log('No panel is currently focused');
+    // }
+
+    if (this.terminal) {
+      console.log("hide terminal", this.terminal)
+      // this.terminal.hide()
+      // this.terminal.show(true); // false means don't focus the terminal
+      // await vscode.commands.executeCommand('workbench.action.terminal.toggleTerminal');
+      // await vscode.commands.executeCommand('workbench.action.terminal.focus')
+      // const terminal = vscode.window.terminals.find(t => t.name === "AutoLama2");
+      // if (!terminal) {
+      //   await vscode.commands.executeCommand('workbench.action.togglePanel');
+      // }
+      if (terminalFocused?.name !== "AutoLama2") {
+        console.log("terminal is not lama2 terminal")
+        // check lama2 terminal is exist
+        const terminal = vscode.window.terminals.find(t => t.name === "AutoLama2");
+        if (!terminal) {
+          await vscode.commands.executeCommand('workbench.action.togglePanel');
+        }
+        else {
+          await this.switchToAutoLama2();
+          await vscode.commands.executeCommand('workbench.action.closePanel');
+        }
+
+      } else {
+        console.log("terminal is lama2 terminal")
+        await vscode.commands.executeCommand('workbench.action.togglePanel');
+      }
+
+
+
+      // await vscode.commands.executeCommand('workbench.action.terminal.focus')
+
+      // await vscode.commands.executeCommand('workbench.action.terminal.focusAccessibleBuffer');
+      // this.terminal.hide()
+
+      // await vscode.commands.executeCommand('workbench.action.focusActiveEditorGroup')
+      // await vscode.commands.executeCommand('workbench.action.terminal.toggleTerminal');
+      // await vscode.commands.executeCommand('workbench.action.closePanel');
+      // setTimeout(async () => {
+      //   await vscode.commands.executeCommand('workbench.action.terminal.toggleTerminal');
+      // }, 20000)
+    }
+    else {
+      console.log("show terminal if terminal is not exist")
+      await vscode.commands.executeCommand('workbench.action.togglePanel');
+    }
+
+    // If terminal is focused, hide it
+    // await vscode.commands.executeCommand('workbench.action.terminal.toggleTerminal');
+  }
+  private switchToAutoLama2 = async () => {
+    while (vscode.window.activeTerminal?.name !== "AutoLama2") {
+      await vscode.commands.executeCommand('workbench.action.terminal.focusNext');
+    }
+  };
+
+
 }
-
-// fs.access(rfile, fs.constants.F_OK, (err) => {
-//         console.log('Checking if output file exists', err);
-//         if (err) {
-//             console.log('Output file does not exist');
-//             this.handleCommandError("Output file not created");
-//         } else {
-//             this.onLama2Finish(rfile);
-//         }
-//         });
-//         return;
-
-//    exec(cmd, (error, stdout, stderr) => {
-//         console.log('exec', cmd)
-//         console.log('stdout', stdout)
-//         console.log('stderr', stderr)
-
-//         // Send the command to the terminal
-
-//         if (stdout) {
-//             // Check if stdout is HTML
-//             if (stdout.trim().startsWith('<')) {
-//             // If it's HTML, call onLama2Finish directly with stdout
-//             this.onLama2Finish(stdout);
-//             return;
-//             }
-
-//             // If it's not HTML, proceed with the file check
-//             fs.access(rfile, fs.constants.F_OK, (err) => {
-//             console.log('Checking if output file exists', err);
-//             if (err) {
-//                 console.log('Output file does not exist');
-//                 this.handleCommandError("Output file not created");
-//             } else {
-//                 this.onLama2Finish(rfile);
-//             }
-//             });
-//             return;
-//         }
-
-//         if (error) {
-//             console.error(`exec error: ${error}`);
-//             this.handleCommandError(stderr);
-//             return;
-//         }
-
-//         if (stderr) {
-//             console.error(`stderr: ${stderr}`);
-//             this.handleCommandError(stderr);
-//             return;
-//         }
-//         });
