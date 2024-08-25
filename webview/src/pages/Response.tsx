@@ -42,7 +42,7 @@ const Response: React.FC = () => {
   })
   const [headers, setHeaders] = useState<HeaderItem[]>([])
   const [error, setError] = useState<string | null>(null)
-  const [showTerminal, setShowTerminal] = useState<boolean>(false)
+  const [isTerminalVisible, setIsTerminalVisible] = useState<boolean>(false)
 
   const toggleIcon = (icon: string) => {
     setHighlightedIcon(icon)
@@ -64,7 +64,6 @@ const Response: React.FC = () => {
   useEffect(() => {
     const messageListener = (event: MessageEvent) => {
       const message = event.data
-      console.log("message", message)
       if (message.command === "update") {
         // console.log("message", message);
 
@@ -137,24 +136,26 @@ const Response: React.FC = () => {
     return () => window.removeEventListener("message", messageListener)
   }, [])
 
+  const toggleTerminal = () => {
+    vscode.postMessage({ command: "toggleTerminal" })
+  }
+
   if (isLoading) {
     return (
       <div className="spinner-container">
         <ProgressSpinner />
+        <Button link label="Cancel Request"/>
       </div>
     )
   }
 
-  const toggleTerminal = () => {
-    vscode.postMessage({ command: "toggleTerminal" })
-    setShowTerminal(!showTerminal)
-  }
+  
 
   if (error) {
     return (
       <div className="error-container">
         <Error error={error} />
-        <Button label={showTerminal ? "Hide Terminal" : "Show Terminal"} onClick={toggleTerminal} />
+        <Button label="Cancel Request" onClick={toggleTerminal} />
       </div>
     )
   }
