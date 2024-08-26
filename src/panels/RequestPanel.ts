@@ -1,12 +1,9 @@
 import * as vscode from "vscode"
-import * as path from "path"
 import ChokiExtension from "../utilities/watchFile"
 import { getLama2Command, getShowLama2Term } from "../utilities/utils"
 import { splitLama2Output } from "../commands/ExecuteCurrentFile/parseOut"
 import { getUri } from "../utilities/getUri"
 import { getNonce } from "../utilities/getNonce"
-import { exec } from "child_process"
-import * as fs from "fs"
 
 export class Lama2Panel {
   public static currentPanel: Lama2Panel | undefined
@@ -42,6 +39,8 @@ export class Lama2Panel {
       Lama2Panel.currentPanel._panel.reveal(vscode.ViewColumn.Two, true)
     } else {
       console.log("opening new panel")
+      vscode.commands.executeCommand('workbench.action.closePanel');
+
       // If a webview panel does not already exist create and show a new one
       const panel = vscode.window.createWebviewPanel(
         // Panel view type
@@ -90,12 +89,19 @@ export class Lama2Panel {
       const { cmd, rflag, rfile, rlog } = lama2Command
       this.rfile = rfile
       this.rlog = rlog
+      this.terminal = getShowLama2Term("AutoLama2")
       this.setLama2Watch(rflag)
 
       // Execute command and capture output
-      this.terminal = getShowLama2Term("AutoLama2")
+
+
       this.terminal.sendText(cmd, true)
+      this.terminal.show(true)
+      vscode.commands.executeCommand('workbench.action.closePanel');
+
+
       console.log("terminal", this.terminal.name)
+      console.log("terminal-process", this.terminal.processId)
     }
     catch (error) {
       console.error("Error executing Lama2 command:", error)
@@ -105,6 +111,8 @@ export class Lama2Panel {
 
   private setLama2Watch(rflag: string) {
     let c = new ChokiExtension()
+    console.log("setLama2Watch", rflag)
+    console.log(this.terminal?.name)
     c.pathAddTrigger(rflag, this.onLama2Finish, this)
   }
 
@@ -124,6 +132,7 @@ export class Lama2Panel {
   }
 
   private async onLama2Finish(output: string) {
+    console.log("onLama2Finish", output)
     try {
       output = this.rfile
       if (typeof output === "string" && output.trim().startsWith("<")) {

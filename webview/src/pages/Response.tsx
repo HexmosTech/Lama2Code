@@ -64,6 +64,7 @@ const Response: React.FC = () => {
   useEffect(() => {
     const messageListener = (event: MessageEvent) => {
       const message = event.data
+      console.log("message", message)
       if (message.command === "update") {
         // console.log("message", message);
 
