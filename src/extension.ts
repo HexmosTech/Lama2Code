@@ -34,7 +34,7 @@ export function activate(context: vscode.ExtensionContext) {
             
           Lama2Panel.render(context.extensionUri);
           if (Lama2Panel.currentPanel) {
-                await Lama2Panel.currentPanel.executeLama2Command();
+            await Lama2Panel.currentPanel.executeLama2Command(langServer);
             }
         })
     );

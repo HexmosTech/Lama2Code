@@ -8,7 +8,8 @@ export type IJSONRPCMethod =
   | "initialize"
   | "shutdown"
   | "exit"
-  | "suggest/environmentVariables";
+  | "suggest/environmentVariables"
+  | "executeCommand";
 
 export interface ILSPRequestDetails {
   process: ChildProcess;
@@ -51,20 +52,36 @@ function sendRequestToProcess(process: any, request: IJSONRPCRequest) {
 // Handle the response from the process
 function handleProcessResponse(process: any, resolve: any, reject: any) {
   const chunks: any[] = [];
+  let count = 0;
   process.stdout.on("data", (data: any) => {
+    count++;
+    console.log("count", count);
+    // console.log("data", data);
     chunks.push(data);
     const responseData = Buffer.concat(chunks).toString();
+    console.log("responseData", responseData);
     try {
-      const responseObject = JSON.parse(responseData);
+      // Extract the second JSON from responseData
+      const secondJsonStart = responseData.lastIndexOf('{"id":');
+      if (secondJsonStart === -1) {
+        throw new Error("Second JSON not found");
+      }
+      const secondJsonString = responseData.substring(secondJsonStart);
+      // console.log("secondJsonString", secondJsonString);
+      // Parse the second JSON
+      const responseObject = JSON.parse(secondJsonString);
       if (responseObject.jsonrpc && responseObject.id) {
         resolve(responseObject);
       }
+      // console.log("responseObject", responseObject);
     } catch (error: any) {
+      console.log("error", error);
       // If JSON parsing fails, wait for a complete response
     }
   });
 
   process.stdout.on("end", () => {
+    console.log("chunks",  Buffer.concat(chunks).toString());
     logToChannel({
       msg: "Received incomplete response from server",
       dataString: Buffer.concat(chunks).toString(),
@@ -89,6 +106,26 @@ export function askLSP(
     const request = createJSONRPCRequest(requestDetails);
     logToChannel({ msg: "Sending request: ", dataObject: request });
     sendRequestToProcess(process, request);
-    handleProcessResponse(process, resolve, reject);
+    let response = handleProcessResponse(process, resolve, reject);
+    console.log("response", response);
+    // logToChannel({ msg: "Received response: ", dataObject: response });
+    return response;
   });
+}
+
+export async function executeL2Command(
+  langServer: ChildProcess,
+  requestId: number,
+  command: string
+): Promise<IJSONRPCResponse> {
+  let l2Req: ILSPRequestDetails = {
+
+    process: langServer,
+    id: requestId,
+    method: "executeCommand",
+    params: {
+      filePath: command
+    },
+  };
+  return await askLSP(l2Req);
 }
