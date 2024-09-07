@@ -73,7 +73,8 @@ export function getLama2Command() {
         cmd: cmd,
         rflag: randomNameFlag,
         rfile: randomNameFile,
-        rlog: randomNameLog
+      rlog: randomNameLog,
+      currentFilePath: currentFilePath
     };
   } catch (error) {
     console.error('Error generating Lama2 command:', error);

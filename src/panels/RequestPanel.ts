@@ -4,6 +4,8 @@ import { getLama2Command, getShowLama2Term } from "../utilities/utils"
 import { splitLama2Output } from "../commands/ExecuteCurrentFile/parseOut"
 import { getUri } from "../utilities/getUri"
 import { getNonce } from "../utilities/getNonce"
+import { executeL2Command } from "../lsp/request/generalRequest"
+import { IJSONRPCResponse } from "../lsp/response/generalResponse"
 
 export class Lama2Panel {
   public static currentPanel: Lama2Panel | undefined
@@ -73,48 +75,55 @@ export class Lama2Panel {
     }
   }
 
-  public async executeLama2Command() {
+  public async executeLama2Command(langServer: any) {
     try {
       this._panel.webview.postMessage({
         command: "update",
         status: "starting",
-      })
+      });
 
-      const lama2Command = getLama2Command()
+      const lama2Command = getLama2Command();
       if (!lama2Command) {
-        console.error("Failed to generate Lama2 command")
-        return
+        console.error("Failed to generate Lama2 command");
+        return;
       }
 
-      const { cmd, rflag, rfile, rlog } = lama2Command
-      this.rfile = rfile
-      this.rlog = rlog
-      this.terminal = getShowLama2Term("AutoLama2")
-      this.setLama2Watch(rflag)
+      const { cmd, currentFilePath } = lama2Command;
+      if (!currentFilePath) {
+        console.error("Failed to get current file path");
+        return;
+      }
 
-      // Execute command and capture output
+      // Execute command using LSP
+      const response: IJSONRPCResponse = await executeL2Command(langServer, 2, currentFilePath);
 
+      if (response.error) {
+        this.handleCommandError(response.error.message);
+      } else {
+        // Process the response
+        const body = response.result;
+        const [httpHead ] = splitLama2Output(response.result);
 
-      this.terminal.sendText(cmd, true)
-      this.terminal.show(true)
-      vscode.commands.executeCommand('workbench.action.closePanel');
-
-
-      console.log("terminal", this.terminal.name)
-      console.log("terminal-process", this.terminal.processId)
-    }
-    catch (error) {
-      console.error("Error executing Lama2 command:", error)
+        this._panel.webview.postMessage({
+          command: "update",
+          status: "finished",
+          lama2Log:"",
+          httpHead,
+          body,
+        });
+      }
+    } catch (error) {
+      console.error("Error executing Lama2 command:", error);
+      this.handleCommandError(error instanceof Error ? error.message : "An unknown error occurred");
     }
   }
 
-
-  private setLama2Watch(rflag: string) {
-    let c = new ChokiExtension()
-    console.log("setLama2Watch", rflag)
-    console.log(this.terminal?.name)
-    c.pathAddTrigger(rflag, this.onLama2Finish, this)
-  }
+  // private setLama2Watch(rflag: string) {
+  //   let c = new ChokiExtension()
+  //   console.log("setLama2Watch", rflag)
+  //   console.log(this.terminal?.name)
+  //   c.pathAddTrigger(rflag, this.onLama2Finish, this)
+  // }
 
   private handleCommandError(errorMessage: string) {
     // Remove ANSI color codes and other formatting
@@ -131,49 +140,49 @@ export class Lama2Panel {
     })
   }
 
-  private async onLama2Finish(output: string) {
-    console.log("onLama2Finish", output)
-    try {
-      output = this.rfile
-      if (typeof output === "string" && output.trim().startsWith("<")) {
-        console.log("outputFile", output)
+  // private async onLama2Finish(output: string) {
+  //   console.log("onLama2Finish", output)
+  //   try {
+  //     output = this.rfile
+  //     if (typeof output === "string" && output.trim().startsWith("<")) {
+  //       console.log("outputFile", output)
 
-        this._panel.webview.postMessage({
-          command: "update",
-          status: "finished",
-          body: { body: output },
-          lama2Log: "",
-          httpHead: "",
-        })
-      } else {
-        const content = await vscode.workspace.fs.readFile(vscode.Uri.file(output))
-        const [lama2Log, httpHead, body] = splitLama2Output(content.toString())
+  //       this._panel.webview.postMessage({
+  //         command: "update",
+  //         status: "finished",
+  //         body: { body: output },
+  //         lama2Log: "",
+  //         httpHead: "",
+  //       })
+  //     } else {
+  //       const content = await vscode.workspace.fs.readFile(vscode.Uri.file(output))
+  //       const [lama2Log, httpHead, body] = splitLama2Output(content.toString())
 
-        // Check if the body is valid JSON
-        JSON.parse(body) // This will throw an error if body is not valid JSON
+  //       // Check if the body is valid JSON
+  //       JSON.parse(body) // This will throw an error if body is not valid JSON
 
-        // Send data to webview
-        this._panel.webview.postMessage({
-          command: "update",
-          status: "finished",
-          lama2Log,
-          httpHead,
-          body,
-        })
+  //       // Send data to webview
+  //       this._panel.webview.postMessage({
+  //         command: "update",
+  //         status: "finished",
+  //         lama2Log,
+  //         httpHead,
+  //         body,
+  //       })
 
-        // Clean up temporary files
-        await vscode.workspace.fs.delete(vscode.Uri.file(output))
-      }
-    } catch (error) {
-      console.log(this.rlog)
-      const stderr = await vscode.workspace.fs.readFile(vscode.Uri.file(this.rlog))
-      const stderrString = new TextDecoder().decode(stderr)
-      console.error("Error processing Lama2 output:", stderrString)
-      this.handleCommandError(
-        error instanceof Error ? stderrString : "An error occurred while processing the Lama2 output"
-      )
-    }
-  }
+  //       // Clean up temporary files
+  //       await vscode.workspace.fs.delete(vscode.Uri.file(output))
+  //     }
+  //   } catch (error) {
+  //     console.log(this.rlog)
+  //     const stderr = await vscode.workspace.fs.readFile(vscode.Uri.file(this.rlog))
+  //     const stderrString = new TextDecoder().decode(stderr)
+  //     console.error("Error processing Lama2 output:", stderrString)
+  //     this.handleCommandError(
+  //       error instanceof Error ? stderrString : "An error occurred while processing the Lama2 output"
+  //     )
+  //   }
+  // }
 
   public dispose() {
     Lama2Panel.currentPanel = undefined
