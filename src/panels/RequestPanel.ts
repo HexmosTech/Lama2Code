@@ -12,9 +12,8 @@ export class Lama2Panel {
   private readonly _panel: vscode.WebviewPanel
   private readonly _extensionUri: vscode.Uri
   private _disposables: vscode.Disposable[] = []
-  private rfile: string = ""
-  private rlog: string = ""
   private terminal: vscode.Terminal | undefined
+  private command: string | undefined
 
   private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri) {
     this._panel = panel
@@ -89,6 +88,7 @@ export class Lama2Panel {
       }
 
       const { cmd, currentFilePath } = lama2Command;
+      this.command = cmd
       if (!currentFilePath) {
         console.error("Failed to get current file path");
         return;
@@ -140,50 +140,6 @@ export class Lama2Panel {
     })
   }
 
-  // private async onLama2Finish(output: string) {
-  //   console.log("onLama2Finish", output)
-  //   try {
-  //     output = this.rfile
-  //     if (typeof output === "string" && output.trim().startsWith("<")) {
-  //       console.log("outputFile", output)
-
-  //       this._panel.webview.postMessage({
-  //         command: "update",
-  //         status: "finished",
-  //         body: { body: output },
-  //         lama2Log: "",
-  //         httpHead: "",
-  //       })
-  //     } else {
-  //       const content = await vscode.workspace.fs.readFile(vscode.Uri.file(output))
-  //       const [lama2Log, httpHead, body] = splitLama2Output(content.toString())
-
-  //       // Check if the body is valid JSON
-  //       JSON.parse(body) // This will throw an error if body is not valid JSON
-
-  //       // Send data to webview
-  //       this._panel.webview.postMessage({
-  //         command: "update",
-  //         status: "finished",
-  //         lama2Log,
-  //         httpHead,
-  //         body,
-  //       })
-
-  //       // Clean up temporary files
-  //       await vscode.workspace.fs.delete(vscode.Uri.file(output))
-  //     }
-  //   } catch (error) {
-  //     console.log(this.rlog)
-  //     const stderr = await vscode.workspace.fs.readFile(vscode.Uri.file(this.rlog))
-  //     const stderrString = new TextDecoder().decode(stderr)
-  //     console.error("Error processing Lama2 output:", stderrString)
-  //     this.handleCommandError(
-  //       error instanceof Error ? stderrString : "An error occurred while processing the Lama2 output"
-  //     )
-  //   }
-  // }
-
   public dispose() {
     Lama2Panel.currentPanel = undefined
 
@@ -234,6 +190,13 @@ export class Lama2Panel {
     `
   }
 
+  private copyL2Command() {
+    if (this.command) {
+      vscode.env.clipboard.writeText(this.command)
+    }
+    vscode.window.showInformationMessage("Lama2 command copied to clipboard")
+  }
+
   private _setWebviewMessageListener(webview: vscode.Webview) {
     webview.onDidReceiveMessage(
       (message: any) => {
@@ -245,8 +208,8 @@ export class Lama2Panel {
           case "showNotification":
             vscode.window.showInformationMessage(message.text)
             break
-          case "toggleTerminal":
-            this.toggleTerminal()
+          case "copyL2Command":
+            this.copyL2Command()
             return
         }
       },
