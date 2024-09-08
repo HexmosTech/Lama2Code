@@ -61,18 +61,18 @@ export function getLama2Command() {
         randomNameFlag = `${windowsBasePath}\\${randomNameBase}.flag`;
         randomNameFile = `${windowsBasePath}\\${randomNameBase}.json`;
         randomNameLog = `${windowsBasePath}\\${randomNameBase}.log`;
-        cmd = `powershell l2 -o ${randomNameFile} ${currentFilePath}; New-Item -Path ${randomNameFlag}`;
+        cmd = `powershell l2 ${currentFilePath}; New-Item -Path ${randomNameFlag}`;
     } else {
         randomNameFlag = `/tmp/${randomNameBase}.flag`;
         randomNameFile = `/tmp/${randomNameBase}.json`;
         randomNameLog = `/tmp/${randomNameBase}.log`;
-        cmd = `l2 -o ${randomNameFile} ${currentFilePath} 2> >(tee ${randomNameLog}); touch ${randomNameFlag}`;
+        cmd = `l2 ${currentFilePath}`;
     }
 
     return {
-        cmd: cmd,
-        rflag: randomNameFlag,
-        rfile: randomNameFile,
+      cmd: cmd,
+      rflag: randomNameFlag,
+      rfile: randomNameFile,
       rlog: randomNameLog,
       currentFilePath: currentFilePath
     };

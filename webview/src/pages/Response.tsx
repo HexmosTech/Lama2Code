@@ -140,49 +140,49 @@ const Response: React.FC = () => {
   const toggleTerminal = () => {
     vscode.postMessage({ command: "toggleTerminal" })
   }
+  const copyL2Command = () => {
+    vscode.postMessage({ command: "copyL2Command" })
+  }
+
 
   if (isLoading) {
     return (
       <div className="spinner-container">
         <ProgressSpinner />
-        <Button link label="Cancel Request"/>
       </div>
     )
   }
-
-  
 
   if (error) {
     return (
       <div className="error-container">
         <Error error={error} />
-        <Button label="Cancel Request" onClick={toggleTerminal} />
       </div>
     )
   }
- const copyContent = () => {
-   const copyBody = htmlContent || JSON.stringify(body, null, 2)
-   navigator.clipboard.writeText(copyBody).then(() => {
-     vscode.postMessage({ command: "showNotification", text: "Copied to clipboard" })
-   })
- }
+  const copyContent = () => {
+    const copyBody = htmlContent || JSON.stringify(body, null, 2)
+    navigator.clipboard.writeText(copyBody).then(() => {
+      vscode.postMessage({ command: "showNotification", text: "Copied to clipboard" })
+    })
+  }
 
- const responseContent = (
-   <>
-     <div className="meta-icon-section">
-       <Metadata {...apiMetrics} />
-       <IconPanel
-         highlightedIcon={highlightedIcon}
-         toggleIcon={toggleIcon}
-         isHtmlContent={!!htmlContent}
-         showTerminal={toggleTerminal}
-         copyContent={copyContent}
-       />
-     </div>
+  const responseContent = (
+    <>
+      <div className="meta-icon-section">
+        <Metadata {...apiMetrics} />
+        <IconPanel
+          highlightedIcon={highlightedIcon}
+          toggleIcon={toggleIcon}
+          isHtmlContent={!!htmlContent}
+          copyL2Command={copyL2Command}
+          copyContent={copyContent}
+        />
+      </div>
 
-     <div>{htmlContent ? <HtmlView content={htmlContent} /> : <JsonView data={body} />}</div>
-   </>
- )
+      <div>{htmlContent ? <HtmlView content={htmlContent} /> : <JsonView data={body} />}</div>
+    </>
+  )
 
   const headersContent = (
     <div className="card">
