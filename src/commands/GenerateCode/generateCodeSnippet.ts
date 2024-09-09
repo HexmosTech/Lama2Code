@@ -42,6 +42,8 @@ class GenerateCodeSnippet {
       cmd = `l2 -c ${lang}.${cli} ${currentFilePath} > ${randomNameFile}; touch ${randomNameFlag}`;
     }
 
+    console.log(cmd)
+
     return {
       cmd: cmd,
       rflag: randomNameFlag,

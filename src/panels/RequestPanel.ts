@@ -194,7 +194,7 @@ export class Lama2Panel {
     if (this.command) {
       vscode.env.clipboard.writeText(this.command)
     }
-    vscode.window.showInformationMessage("Lama2 command copied to clipboard")
+    vscode.window.showInformationMessage("Lama2 command copied to clipboard. Paste and execute from any terminal")
   }
 
   private _setWebviewMessageListener(webview: vscode.Webview) {
