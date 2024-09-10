@@ -2,7 +2,7 @@ import * as vscode from "vscode";
 import { ChildProcess, execSync } from "child_process";
 import * as path from "path";
 import * as fs from "fs";
-import triggers from "../../triggers";
+import triggers from "../utils/triggers";
 import {
   ErrorCodes,
   IJSONRPCResponse,

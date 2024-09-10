@@ -1,10 +1,41 @@
+# This file contains all the files/directories that should
+# be ignored (i.e. not included) in the final packaged extension.
+
+# Ignore extension configs
 .vscode/**
+
+# Ignore test files
 .vscode-test/**
+out/test/**
+
+# Ignore source code
 src/**
-.gitignore
+
+# Ignore all webview files except the build directory
+webview/src/**
+webview/public/**
+webview/scripts/**
+webview/index.html
+webview/README.md
+webview/package.json
+webview/package-lock.json
+webview/node_modules/**
+
+# Ignore Misc
 .yarnrc
 vsc-extension-quickstart.md
+**/.vsix
+**/.gitignore
 **/tsconfig.json
+**/vite.config.ts
 **/.eslintrc.json
 **/*.map
 **/*.ts
+**/*.gif
+**/*.sh
+**/*.md
+**/*.txt
+banner.png
+.prettierignore
+.prettierrc
+.prettier.config.js
