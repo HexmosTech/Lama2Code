@@ -57,7 +57,7 @@ download_and_install_l2() {
     if [ -z "$BINARY_URL" ] || [ "$BINARY_URL" = "null" ]; then
         echo -e "${RED}No binary file found for ${the_os}-${architecture} in the latest release${NC}"
         exit 1
-    }
+    fi
 
     echo -e "${GREEN}Downloading l2 binary from $BINARY_URL${NC}"
     wget -O /tmp/l2_latest.tar.gz "$BINARY_URL"
@@ -116,7 +116,7 @@ command -v code >/dev/null 2>&1 || { echo -e >&2 "${RED}This script requires VS 
 download_and_install_l2
 
 if l2 --version > /dev/null 2>&1; then 
-    echo -e "${GREEN}Successfully installed Lama2 latest version; Type 'l2 <api_file>' to invoke Lama2${NC}"
+    echo -e "${GREEN}Successfully installed Lama2 version; Type 'l2 <api_file>' to invoke Lama2${NC}"
     echo -e "${YELLOW}Installed version:${NC}"
     l2 --version
 
