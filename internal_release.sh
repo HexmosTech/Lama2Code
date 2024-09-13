@@ -38,12 +38,12 @@ get_os() {
 
 # Function to download and install the Lama2 binary
 download_and_install_l2() {
-    # Fetch the latest pre-release information
-    echo -e "${GREEN}Fetching latest pre-release information...${NC}"
-    RELEASE_INFO=$(curl -s "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME_CORE/releases" | jq '[.[] | select(.prerelease == true)] | first')
+    # Fetch the latest release information
+    echo -e "${GREEN}Fetching latest release information...${NC}"
+    RELEASE_INFO=$(curl -s "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME_CORE/releases/latest")
 
     if [ -z "$RELEASE_INFO" ] || [ "$RELEASE_INFO" = "null" ]; then
-        echo -e "${RED}No pre-release found${NC}"
+        echo -e "${RED}No release found${NC}"
         exit 1
     fi
 
@@ -55,9 +55,9 @@ download_and_install_l2() {
     BINARY_URL=$(echo "$RELEASE_INFO" | jq -r --arg os "$the_os" --arg arch "$architecture" '.assets[] | select(.name | endswith($os + "-" + $arch + ".tar.gz")) | .browser_download_url')
 
     if [ -z "$BINARY_URL" ] || [ "$BINARY_URL" = "null" ]; then
-        echo -e "${RED}No binary file found for ${the_os}-${architecture} in the latest pre-release${NC}"
+        echo -e "${RED}No binary file found for ${the_os}-${architecture} in the latest release${NC}"
         exit 1
-    fi
+    }
 
     echo -e "${GREEN}Downloading l2 binary from $BINARY_URL${NC}"
     wget -O /tmp/l2_latest.tar.gz "$BINARY_URL"
@@ -116,7 +116,7 @@ command -v code >/dev/null 2>&1 || { echo -e >&2 "${RED}This script requires VS 
 download_and_install_l2
 
 if l2 --version > /dev/null 2>&1; then 
-    echo -e "${GREEN}Successfully installed Lama2 beta version; Type 'l2 <api_file>' to invoke Lama2${NC}"
+    echo -e "${GREEN}Successfully installed Lama2 latest version; Type 'l2 <api_file>' to invoke Lama2${NC}"
     echo -e "${YELLOW}Installed version:${NC}"
     l2 --version
 
