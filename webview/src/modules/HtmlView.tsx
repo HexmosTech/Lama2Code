@@ -1,11 +1,11 @@
-import React from "react";
+import React from "react"
 
 interface HtmlViewProps {
-  content: string;
+  content: string
 }
 
 const HtmlView: React.FC<HtmlViewProps> = ({ content }) => (
   <div className="html-content-container" dangerouslySetInnerHTML={{ __html: content }} />
-);
+)
 
-export default HtmlView;
+export default HtmlView

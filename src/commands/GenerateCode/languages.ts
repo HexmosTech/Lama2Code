@@ -215,5 +215,5 @@ let a = {
       nsurlsession: null,
     },
   },
-};
-export default a;
+}
+export default a

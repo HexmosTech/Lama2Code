@@ -120,10 +120,10 @@
 //         <meta charset="UTF-8" />
 //         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 //         <meta http-equiv="Content-Security-Policy" content="
-//         default-src 'none'; 
-//         style-src 'self' 'unsafe-inline' ${webview.cspSource} ; 
-//         script-src 'self' 'unsafe-inline' ${webview.cspSource}; 
-//         img-src 'self' 'unsafe-inline' ${webview.cspSource} data: ; 
+//         default-src 'none';
+//         style-src 'self' 'unsafe-inline' ${webview.cspSource} ;
+//         script-src 'self' 'unsafe-inline' ${webview.cspSource};
+//         img-src 'self' 'unsafe-inline' ${webview.cspSource} data: ;
 //         font-src 'self' 'unsafe-inline' ${webview.cspSource};">
 //         <link rel="stylesheet" type="text/css" nonce="${nonce}" href="${stylesUri}">
 //         <script type="module" nonce="${nonce}" src="${scriptUri}"></script>
@@ -135,7 +135,6 @@
 //     </html>
 //   `;
 // }
-
 
 //   /**
 //    * Sets up an event listener to listen for messages passed from the webview context and

@@ -40,7 +40,7 @@ export class Lama2Panel {
       Lama2Panel.currentPanel._panel.reveal(vscode.ViewColumn.Two, true)
     } else {
       console.log("opening new panel")
-      vscode.commands.executeCommand('workbench.action.closePanel');
+      vscode.commands.executeCommand("workbench.action.closePanel")
 
       // If a webview panel does not already exist create and show a new one
       const panel = vscode.window.createWebviewPanel(
@@ -49,14 +49,14 @@ export class Lama2Panel {
         // Panel title
         "Lama2 Output",
         // The editor column the panel should be displayed in
-        
+
         // { preserveFocus: true, viewColumn: vscode.ViewColumn.Two },
         { preserveFocus: true, viewColumn: vscode.ViewColumn.Two },
-        
+
         // Extra panel configurations
         {
           // Enable JavaScript in the webview
-          
+
           enableScripts: true,
           // Restrict the webview to only load resources from the `out` and `webview-ui/build` directories
           localResourceRoots: [
@@ -79,42 +79,42 @@ export class Lama2Panel {
       this._panel.webview.postMessage({
         command: "update",
         status: "starting",
-      });
+      })
 
-      const lama2Command = getLama2Command();
+      const lama2Command = getLama2Command()
       if (!lama2Command) {
-        console.error("Failed to generate Lama2 command");
-        return;
+        console.error("Failed to generate Lama2 command")
+        return
       }
 
-      const { cmd, currentFilePath } = lama2Command;
+      const { cmd, currentFilePath } = lama2Command
       this.command = cmd
       if (!currentFilePath) {
-        console.error("Failed to get current file path");
-        return;
+        console.error("Failed to get current file path")
+        return
       }
 
       // Execute command using LSP
-      const response: IJSONRPCResponse = await executeL2Command(langServer, 2, currentFilePath);
+      const response: IJSONRPCResponse = await executeL2Command(langServer, 2, currentFilePath)
 
       if (response.error) {
-        this.handleCommandError(response.error.message);
+        this.handleCommandError(response.error.message)
       } else {
         // Process the response
-        const body = response.result;
-        const [httpHead ] = splitLama2Output(response.result);
+        const body = response.result
+        const [httpHead] = splitLama2Output(response.result)
 
         this._panel.webview.postMessage({
           command: "update",
           status: "finished",
-          lama2Log:"",
+          lama2Log: "",
           httpHead,
           body,
-        });
+        })
       }
     } catch (error) {
-      console.error("Error executing Lama2 command:", error);
-      this.handleCommandError(error instanceof Error ? error.message : "An unknown error occurred");
+      console.error("Error executing Lama2 command:", error)
+      this.handleCommandError(error instanceof Error ? error.message : "An unknown error occurred")
     }
   }
 
@@ -218,7 +218,6 @@ export class Lama2Panel {
     )
   }
 
-
   // private async toggleTerminal() {
   //   const activeTerminal = vscode.window.activeTerminal;
   //   console.log("activeTerminal", activeTerminal?.name)
@@ -246,9 +245,8 @@ export class Lama2Panel {
   //   // }
   // }
 
-
   private async toggleTerminal() {
-    const isTerminalVisible = vscode.window.terminals.length > 0;
+    const isTerminalVisible = vscode.window.terminals.length > 0
     console.log("isTerminalVisible", isTerminalVisible)
     const terminalFocused = vscode.window.activeTerminal
     console.log("terminalFocused", terminalFocused)
@@ -277,21 +275,17 @@ export class Lama2Panel {
       if (terminalFocused?.name !== "AutoLama2") {
         console.log("terminal is not lama2 terminal")
         // check lama2 terminal is exist
-        const terminal = vscode.window.terminals.find(t => t.name === "AutoLama2");
+        const terminal = vscode.window.terminals.find((t) => t.name === "AutoLama2")
         if (!terminal) {
-          await vscode.commands.executeCommand('workbench.action.togglePanel');
+          await vscode.commands.executeCommand("workbench.action.togglePanel")
+        } else {
+          await this.switchToAutoLama2()
+          await vscode.commands.executeCommand("workbench.action.closePanel")
         }
-        else {
-          await this.switchToAutoLama2();
-          await vscode.commands.executeCommand('workbench.action.closePanel');
-        }
-
       } else {
         console.log("terminal is lama2 terminal")
-        await vscode.commands.executeCommand('workbench.action.togglePanel');
+        await vscode.commands.executeCommand("workbench.action.togglePanel")
       }
-
-
 
       // await vscode.commands.executeCommand('workbench.action.terminal.focus')
 
@@ -304,10 +298,9 @@ export class Lama2Panel {
       // setTimeout(async () => {
       //   await vscode.commands.executeCommand('workbench.action.terminal.toggleTerminal');
       // }, 20000)
-    }
-    else {
+    } else {
       console.log("show terminal if terminal is not exist")
-      await vscode.commands.executeCommand('workbench.action.togglePanel');
+      await vscode.commands.executeCommand("workbench.action.togglePanel")
     }
 
     // If terminal is focused, hide it
@@ -315,9 +308,7 @@ export class Lama2Panel {
   }
   private switchToAutoLama2 = async () => {
     while (vscode.window.activeTerminal?.name !== "AutoLama2") {
-      await vscode.commands.executeCommand('workbench.action.terminal.focusNext');
+      await vscode.commands.executeCommand("workbench.action.terminal.focusNext")
     }
-  };
-
-
+  }
 }

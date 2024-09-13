@@ -1,14 +1,14 @@
-import React, { useState, useEffect } from "react";
-import { DataTable } from "primereact/datatable";
-import { Column } from "primereact/column";
-import { ProgressSpinner } from "primereact/progressspinner";
+import React, { useState, useEffect } from "react"
+import { DataTable } from "primereact/datatable"
+import { Column } from "primereact/column"
+import { ProgressSpinner } from "primereact/progressspinner"
 
-import Header from "@/modules/Headers";
-import IconPanel from "@/modules/IconPanel";
-import JsonView from "@/modules/JsonView";
-import HtmlView from "@/modules/HtmlView";
-import Metadata from "@/modules/Metadata";
-import Error from "@/modules/Error";
+import Header from "@/modules/Headers"
+import IconPanel from "@/modules/IconPanel"
+import JsonView from "@/modules/JsonView"
+import HtmlView from "@/modules/HtmlView"
+import Metadata from "@/modules/Metadata"
+import Error from "@/modules/Error"
 import { Button } from "primereact/button"
 
 interface HeaderItem {
@@ -144,7 +144,6 @@ const Response: React.FC = () => {
     vscode.postMessage({ command: "copyL2Command" })
   }
 
-
   if (isLoading) {
     return (
       <div className="spinner-container">
@@ -196,4 +195,4 @@ const Response: React.FC = () => {
   return <Header responseContent={responseContent} headersContent={headersContent} />
 }
 
-export default Response;
+export default Response

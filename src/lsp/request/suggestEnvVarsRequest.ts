@@ -1,7 +1,7 @@
-import * as vscode from "vscode";
-import { ChildProcess } from "child_process";
-import { ILSPRequestDetails, askLSP } from "./generalRequest";
-import { IJSONRPCResponse } from "../response/generalResponse";
+import * as vscode from "vscode"
+import { ChildProcess } from "child_process"
+import { ILSPRequestDetails, askLSP } from "./generalRequest"
+import { IJSONRPCResponse } from "../response/generalResponse"
 
 export async function getEnvsFromLsp(
   langServer: ChildProcess,
@@ -21,7 +21,7 @@ export async function getEnvsFromLsp(
       position: position,
       searchQuery: searchQuery,
     },
-  };
-  const response: IJSONRPCResponse = await askLSP(envsReq);
-  return response;
+  }
+  const response: IJSONRPCResponse = await askLSP(envsReq)
+  return response
 }

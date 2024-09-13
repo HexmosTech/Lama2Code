@@ -1,4 +1,4 @@
-var chokidar = require("chokidar");
+var chokidar = require("chokidar")
 
 /*
  * This class works around dealing with bug:
@@ -16,24 +16,24 @@ var chokidar = require("chokidar");
  *
  */
 export default class ChokiExtension {
-  watcher: any;
+  watcher: any
 
   constructor() {
-    this.watcher = null;
+    this.watcher = null
   }
 
   pathAddTrigger(path: string, triggerFn: any, boundObj: any) {
     this.watcher = chokidar.watch(path, {
       usePolling: true,
-    });
-    let newFunc = triggerFn.bind(boundObj);
-    let _this = this;
+    })
+    let newFunc = triggerFn.bind(boundObj)
+    let _this = this
     this.watcher.on("add", function (p: string) {
       setTimeout(function () {
-        console.log("Chokidar Clozing");
-        _this.watcher.close();
-      }, 1000);
-      return newFunc(p);
-    });
+        console.log("Chokidar Clozing")
+        _this.watcher.close()
+      }, 1000)
+      return newFunc(p)
+    })
   }
 }

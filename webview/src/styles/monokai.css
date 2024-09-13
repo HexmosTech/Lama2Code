@@ -1,36 +1,36 @@
 /* src/monokai.css */
 :root {
-    --background-color: #272822;
-    --foreground-color: #f8f8f2;
-    --comment-color: #75715e;
-    --keyword-color: #f92672;
-    --string-color: #e6db74;
-    --function-color: #a6e22e;
-    --variable-color: #fd971f;
+  --background-color: #272822;
+  --foreground-color: #f8f8f2;
+  --comment-color: #75715e;
+  --keyword-color: #f92672;
+  --string-color: #e6db74;
+  --function-color: #a6e22e;
+  --variable-color: #fd971f;
 }
 
 html body {
-    background-color: var(--background-color) !important;
-    color: var(--foreground-color);
-    font-family: 'Courier New', Courier, monospace;
+  background-color: var(--background-color) !important;
+  color: var(--foreground-color);
+  font-family: "Courier New", Courier, monospace;
 }
 
 .comment {
-    color: var(--comment-color);
+  color: var(--comment-color);
 }
 
 .keyword {
-    color: var(--keyword-color);
+  color: var(--keyword-color);
 }
 
 .string {
-    color: var(--string-color);
+  color: var(--string-color);
 }
 
 .function {
-    color: var(--function-color);
+  color: var(--function-color);
 }
 
 .variable {
-    color: var(--variable-color);
+  color: var(--variable-color);
 }

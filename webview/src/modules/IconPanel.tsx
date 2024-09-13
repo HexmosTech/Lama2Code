@@ -1,5 +1,5 @@
-import React from "react";
-import { classNames } from "primereact/utils";
+import React from "react"
+import { classNames } from "primereact/utils"
 import { Tooltip } from "primereact/tooltip"
 
 interface IconPanelProps {
@@ -43,7 +43,8 @@ const IconPanel: React.FC<IconPanelProps> = ({
       data-pr-tooltip="Copy content"
       data-pr-position="top"
       data-pr-at="center+2 top-2"
-      data-pr-my="center bottom">
+      data-pr-my="center bottom"
+    >
       <i className="codicon codicon-copy"></i>
     </div>
     <Tooltip target=".debug-icon" showDelay={1000} />
@@ -53,10 +54,11 @@ const IconPanel: React.FC<IconPanelProps> = ({
       data-pr-tooltip="Copy L2 command"
       data-pr-position="top"
       data-pr-at="center+2 top-2"
-      data-pr-my="center bottom">
+      data-pr-my="center bottom"
+    >
       <i className="codicon codicon-debug-console"></i>
     </div>
   </div>
 )
 
-export default IconPanel;
+export default IconPanel

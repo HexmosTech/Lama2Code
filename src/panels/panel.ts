@@ -3,7 +3,6 @@
 
 // let panel: vscode.WebviewPanel | undefined = undefined;
 
-
 // function createWebviewHTML(URI: vscode.Uri, initialData: any) : string {
 //     return (
 //         `
@@ -44,10 +43,10 @@
 //             retainContextWhenHidden: true
 //         }
 //     );
-    
+
 //     // Set the icon logo of extension webview
 //     panel.iconPath = vscode.Uri.joinPath(context.extensionUri, 'media', 'RL(Final).png');
-    
+
 //     // Set URI to be the path to bundle
 //     const bundlePath: vscode.Uri = vscode.Uri.joinPath(context.extensionUri, 'build', 'bundle.js');
 
@@ -61,4 +60,3 @@
 
 //     return panel;
 // };
-

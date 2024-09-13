@@ -1,9 +1,9 @@
-import { Message } from "primereact/message";
+import { Message } from "primereact/message"
 
-import React, { useRef } from "react";
+import React, { useRef } from "react"
 
 interface ErrorProps {
-  error: string;
+  error: string
 }
 
 const Error: React.FC<ErrorProps> = ({ error }) => {
@@ -11,7 +11,7 @@ const Error: React.FC<ErrorProps> = ({ error }) => {
     <div>
       <Message severity="error" text={error} />
     </div>
-  );
-};
+  )
+}
 
-export default Error;
+export default Error

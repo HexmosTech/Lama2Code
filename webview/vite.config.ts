@@ -1,10 +1,10 @@
-import { defineConfig } from "vite";
+import { defineConfig } from "vite"
 // import react from "@vitejs/plugin-react";
-import preact from '@preact/preset-vite'
-import tsconfigPaths from 'vite-tsconfig-paths';
+import preact from "@preact/preset-vite"
+import tsconfigPaths from "vite-tsconfig-paths"
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [tsconfigPaths(),preact()],
+  plugins: [tsconfigPaths(), preact()],
   build: {
     outDir: "build",
     rollupOptions: {
@@ -16,4 +16,4 @@ export default defineConfig({
     },
     // minify: false,
   },
-});
+})

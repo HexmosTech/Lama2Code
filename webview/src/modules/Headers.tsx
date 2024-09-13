@@ -1,9 +1,9 @@
-import React from "react";
-import { TabView, TabPanel } from "primereact/tabview";
+import React from "react"
+import { TabView, TabPanel } from "primereact/tabview"
 
 interface HeaderProps {
-  responseContent: React.ReactNode;
-  headersContent: React.ReactNode;
+  responseContent: React.ReactNode
+  headersContent: React.ReactNode
 }
 
 const Header: React.FC<HeaderProps> = ({ responseContent, headersContent }) => (
@@ -13,6 +13,6 @@ const Header: React.FC<HeaderProps> = ({ responseContent, headersContent }) => (
       <TabPanel header="Headers">{headersContent}</TabPanel>
     </TabView>
   </div>
-);
+)
 
-export default Header;
+export default Header
