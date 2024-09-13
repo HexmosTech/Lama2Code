@@ -9,7 +9,8 @@ export type IJSONRPCMethod =
   | "shutdown"
   | "exit"
   | "suggest/environmentVariables"
-  | "executeCommand";
+  | "executeCommand"
+  | "codeGeneration";
 
 export interface ILSPRequestDetails {
   process: ChildProcess;
@@ -24,6 +25,8 @@ export interface IJSONRPCRequest {
   method: IJSONRPCMethod;
   params: any;
 }
+
+
 
 // Check if the process is initialized
 function isProcessInitialized(process: any): boolean {
@@ -126,6 +129,26 @@ export async function executeL2Command(
     params: {
       filePath: command
     },
+  };
+  return await askLSP(l2Req);
+}
+
+export async function codeGeneration(
+  langServer: ChildProcess,
+  requestId: number,
+  filePath: string,
+  language: string,
+  client: string
+): Promise<IJSONRPCResponse> {
+  let l2Req: ILSPRequestDetails = {
+    process: langServer,
+    id: requestId,
+    method: "codeGeneration",
+    params: {
+      filePath: filePath,
+      language: language,
+      client: client
+    }
   };
   return await askLSP(l2Req);
 }

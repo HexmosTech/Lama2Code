@@ -48,7 +48,7 @@ export function activate(context: vscode.ExtensionContext) {
     console.log(">>> prettifyCurrentFileDisposable is now active!");
 
 
-    let generateCodeSnippetDisposable = genCodeSnip();
+    let generateCodeSnippetDisposable = genCodeSnip(langServer);
     context.subscriptions.push(generateCodeSnippetDisposable);
     console.log(">>> generateCodeSnippetDisposable is now active!");
     
