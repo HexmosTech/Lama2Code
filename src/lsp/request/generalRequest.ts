@@ -58,7 +58,6 @@ function handleProcessResponse(process: any, resolve: any, reject: any) {
     // console.log("data", data);
     chunks.push(data)
     const responseData = Buffer.concat(chunks).toString()
-    console.log("responseData", responseData)
     try {
       // Extract the second JSON from responseData
       const secondJsonStart = responseData.lastIndexOf('{"id":')

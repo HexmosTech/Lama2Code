@@ -25,8 +25,10 @@ class GenerateCodeSnippet {
       return
     }
     const response: IJSONRPCResponse = await codeGeneration(langServer, 2, currentFilePath, lang, cli)
+    console.log("response02", response)
     let { result } = response
-    if (result === "false" || result === false || result.includes("Error")) {
+    console.log("result", result)
+    if (result === "false" || result === false) {
       vscode.window.showInformationMessage("Something went wrong. Retry.")
     } else {
       if (result.includes("Code copied to clipboard")) {
