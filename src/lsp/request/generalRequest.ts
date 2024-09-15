@@ -55,26 +55,20 @@ function handleProcessResponse(process: any, resolve: any, reject: any) {
   process.stdout.on("data", (data: any) => {
     count++
     console.log("count", count)
-    // console.log("data", data);
     chunks.push(data)
     const responseData = Buffer.concat(chunks).toString()
     try {
-      // Extract the second JSON from responseData
-      const secondJsonStart = responseData.lastIndexOf('{"id":')
-      if (secondJsonStart === -1) {
-        throw new Error("Second JSON not found")
-      }
+      const secondJsonStart = responseData.lastIndexOf('{"id":2')
       const secondJsonString = responseData.substring(secondJsonStart)
-      // console.log("secondJsonString", secondJsonString);
-      // Parse the second JSON
-      const responseObject = JSON.parse(secondJsonString)
+      const responseObject = JSON.parse(secondJsonString) as IJSONRPCResponse
+      console.log("responseObject", responseObject)
       if (responseObject.jsonrpc && responseObject.id) {
         resolve(responseObject)
+        return
       }
-      // console.log("responseObject", responseObject);
     } catch (error: any) {
-      console.log("error", error)
-      // If JSON parsing fails, wait for a complete response
+      console.log("error in catch", error)
+      return
     }
   })
 
@@ -85,6 +79,13 @@ function handleProcessResponse(process: any, resolve: any, reject: any) {
       dataString: Buffer.concat(chunks).toString(),
     })
     reject(new Error("Received incomplete response from server"))
+    return
+  })
+
+  process.stdout.on("error", (error: any) => {
+    console.log("error", error)
+    reject(new Error("Error reading from server: " + error.message))
+    return
   })
 }
 
