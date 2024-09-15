@@ -11,58 +11,59 @@ REPO_OWNER="HexmosTech"
 REPO_NAME_CORE="Lama2"
 REPO_NAME_EXTENSION="Lama2Code"
 
-# Function to determine OS and architecture
-get_platform() {
-    architecture=""
+# Function to get system architecture
+get_architecture() {
     case $(uname -m) in
-    i386 | i686) architecture="386" ;;
-    x86_64) architecture="amd64" ;;
-    arm) dpkg --print-architecture | grep -q "arm64" && architecture="arm64" || architecture="arm" ;;
-    arm64) architecture="arm64" ;;
-    *) echo -e "${RED}Unsupported architecture: $(uname -m)${NC}"; exit 1 ;;
+        i386) echo "386" ;;
+        i686) echo "386" ;;
+        x86_64) echo "amd64" ;;
+        arm) dpkg --print-architecture | grep -q "arm64" && echo "arm64" || echo "arm" ;;
+        arm64) echo "arm64" ;;
+        *) echo "unknown" && exit 1 ;;
     esac
 }
 
+# Function to get operating system
 get_os() {
-    the_os=""
-    case "$OSTYPE" in
-    linux-gnu*) the_os="linux" ;;
-    darwin*) the_os="darwin" ;;
-    cygwin | msys | win32 | freebsd*)
-        echo -e "${RED}Installer not supported on this OS; please use release binary${NC}"
-        exit 1
-        ;;
-    *) echo -e "${RED}Unknown OS: $OSTYPE${NC}"; exit 1 ;;
-    esac
+    if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+        echo "linux"
+    elif [[ "$OSTYPE" == "darwin"* ]]; then
+        echo "darwin"
+    else
+        echo "unsupported" && exit 1
+    fi
 }
 
 # Function to download and install the Lama2 binary
 download_and_install_l2() {
-    # Fetch the latest release information
-    echo -e "${GREEN}Fetching latest release information...${NC}"
-    RELEASE_INFO=$(curl -s "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME_CORE/releases/latest")
+    # Fetch the latest pre-release information
+    echo -e "${GREEN}Fetching latest pre-release information...${NC}"
+    RELEASE_INFO=$(curl -s "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME_CORE/releases" | jq '[.[] | select(.prerelease == true)] | first')
 
     if [ -z "$RELEASE_INFO" ] || [ "$RELEASE_INFO" = "null" ]; then
-        echo -e "${RED}No release found${NC}"
+        echo -e "${RED}No pre-release found${NC}"
         exit 1
     fi
 
-    # Determine platform
-    get_platform
-    get_os
+    # Get system information
+    ARCH=$(get_architecture)
+    OS=$(get_os)
 
-    # Extract the binary download URL for the specific platform
-    BINARY_URL=$(echo "$RELEASE_INFO" | jq -r --arg os "$the_os" --arg arch "$architecture" '.assets[] | select(.name | endswith($os + "-" + $arch + ".tar.gz")) | .browser_download_url')
+    # Extract the binary download URL
+    BINARY_URL=$(echo "$RELEASE_INFO" | jq -r --arg OS "$OS" --arg ARCH "$ARCH" '.assets[] | select(.name | contains($OS) and contains($ARCH) and endswith(".tar.gz")) | .browser_download_url')
+    TAG_NAME=$(echo "$RELEASE_INFO" | jq -r '.tag_name')
 
     if [ -z "$BINARY_URL" ] || [ "$BINARY_URL" = "null" ]; then
-        echo -e "${RED}No binary file found for ${the_os}-${architecture} in the latest release${NC}"
+        echo -e "${RED}No compatible binary file found in the latest pre-release${NC}"
         exit 1
     fi
 
     echo -e "${GREEN}Downloading l2 binary from $BINARY_URL${NC}"
-    wget -O /tmp/l2_latest.tar.gz "$BINARY_URL"
+    curl -L -o /tmp/l2_latest.tar.gz "$BINARY_URL"
+    
     tar -xvzf /tmp/l2_latest.tar.gz -C /tmp
-    sudo mv /tmp/l2 /usr/local/bin/l2
+    sudo rm -f /usr/local/bin/l2 /usr/bin/l2
+    sudo mv /tmp/l2 /usr/local/bin
     sudo chmod +x /usr/local/bin/l2
 }
 
@@ -116,7 +117,7 @@ command -v code >/dev/null 2>&1 || { echo -e >&2 "${RED}This script requires VS 
 download_and_install_l2
 
 if l2 --version > /dev/null 2>&1; then 
-    echo -e "${GREEN}Successfully installed Lama2 version; Type 'l2 <api_file>' to invoke Lama2${NC}"
+    echo -e "${GREEN}Successfully installed Lama2 beta version; Type 'l2 <api_file>' to invoke Lama2${NC}"
     echo -e "${YELLOW}Installed version:${NC}"
     l2 --version
 
